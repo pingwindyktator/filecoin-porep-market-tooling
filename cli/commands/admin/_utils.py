@@ -67,7 +67,7 @@ def get_db_sps(db_url: str, all: bool = False) -> list[SPRegistryProvider]:
 
         # TODO
         result.append(SPRegistryProvider(
-            provider_id=org.id,
+            provider_id=org.id,  # TODO assumes db id == smart contract id
             organization_address=organization_address,
             capabilities=SPRegistrySLIThresholds(
                 retrievability_bps=retrievability_guarantees_to_bps(org.retrievability_guarantees),

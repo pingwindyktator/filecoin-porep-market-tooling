@@ -19,6 +19,7 @@ Run the script: `python3 ./porep_market_tooling.py` and follow help prompts.
 ## Important notes
 - All write operations requires confirmation before sending. There is no option to override this. \
 If you decline the final confirmation, the command falls back to dry-run behavior for that transaction.
+- Default behaviour is to wait for every transaction confirmation BEFORE sending the next one.
 - The app operates on ETH 0x addresses and FEVM Smart Contracts and does not fully support Filecoin f-addresses.
 
 

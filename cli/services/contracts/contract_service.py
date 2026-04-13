@@ -1,4 +1,5 @@
 import json
+import time
 import click
 import logging
 
@@ -95,9 +96,25 @@ class ContractService:
             self.logger.error(f"Transaction failed: {transaction}: {str(e)}")
             raise Exception(f"Transaction failed: {str(e)}")
 
+    def _get_nonce(self, from_address: Address) -> int:
+        try:
+            latest_nonce = self.w3.eth.get_transaction_count(from_address, 'latest')
+            pending_nonce = self.w3.eth.get_transaction_count(from_address, 'pending')
+
+            while pending_nonce > latest_nonce:
+                click.echo(f"Address {from_address} has {pending_nonce - latest_nonce} pending transactions, waiting...")
+                latest_nonce = self.w3.eth.get_transaction_count(from_address, 'latest')
+
+                time.sleep(3)
+
+            return pending_nonce
+
+        except Exception as e:
+            raise Exception(f"Failed to get nonce for address {from_address}: {str(e)}")
+
     def sign_and_send_tx(self, _transaction, from_private_key: str) -> str:
         from_address = self.w3.eth.account.from_key(from_private_key).address
-        nonce = self.w3.eth.get_transaction_count(from_address, 'pending')
+        nonce = self._get_nonce(from_address)
         transaction = _transaction.build_transaction({'from': from_address, 'nonce': nonce})
 
         self.logger.info(f"Transaction prepared: {_transaction.__dict__}")

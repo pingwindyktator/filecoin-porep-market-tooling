@@ -38,7 +38,8 @@ def _init_accepted_deals(from_private_key: str):
         _deposit_and_approve_operator(deal, from_private_key)
         _initialize_rail(deal, from_private_key)
 
-    click.echo(f"Run {sys.argv[0]} client deposit-for-all-deals to make sure you have enough FileCoin pay funds deposited for all your accepted deals")
+    # TODO wait for tx after steps
+    click.echo(f"\nRun {sys.argv[0]} client deposit-for-all-deals to make sure you have enough FileCoin pay funds deposited for all your accepted deals")
 
 
 def __get_validator_address_for_deal(deal: PoRepMarketDealProposal) -> str:
@@ -51,13 +52,15 @@ def __get_validator_address_for_deal(deal: PoRepMarketDealProposal) -> str:
 
 
 def _deploy_and_set_validator(deal: PoRepMarketDealProposal, from_private_key: str) -> str | None:
-    if deal.validator_address:
+    if deal.state != PoRepMarketDealState.Accepted:
+        raise Exception(f"Deal id {deal.deal_id} is not in accepted state")
+
+    if __get_validator_address_for_deal(deal):
         click.echo(f"Validator already set for deal id {deal.deal_id}: {deal.validator_address}")
         return
 
     if not utils.ask_user_confirm(f"Deploy and set validator for deal id {deal.deal_id}?", default_answer=True): return
 
-    _ = __get_validator_address_for_deal(deal)  # just verify
     tx_hash = ValidatorFactory().create(deal.deal_id, from_private_key)
 
     click.echo(f"Validator deployed for deal id {deal.deal_id}: {tx_hash}")
@@ -65,6 +68,10 @@ def _deploy_and_set_validator(deal: PoRepMarketDealProposal, from_private_key: s
 
 
 def _deposit_and_approve_operator(deal: PoRepMarketDealProposal, from_private_key: str) -> str | None:
+    if not __get_validator_address_for_deal(deal):
+        click.echo(f"Validator not found for deal id {deal.deal_id}, cannot deposit and approve operator")
+        return
+
     from_address = w3.eth.account.from_key(from_private_key).address
     operator_approval = FileCoinPay().get_operator_approval(utils.get_env('USDC_TOKEN'),
                                                             from_address,
@@ -84,7 +91,6 @@ def _deposit_and_approve_operator(deal: PoRepMarketDealProposal, from_private_ke
     token_balance = USDCToken().balance_of(from_address)
     token_balance_tokens = utils.to_tokens(token_balance, token_decimals)
 
-    _ = __get_validator_address_for_deal(deal)  # just verify
     permit_deadline = client_utils.get_permit_deadline()
 
     deposit_amount = client_utils.calculate_deposit_amount_for_deal(deal, 1)
@@ -125,13 +131,25 @@ def _deposit_and_approve_operator(deal: PoRepMarketDealProposal, from_private_ke
 
 
 def _initialize_rail(deal: PoRepMarketDealProposal, from_private_key: str) -> str | None:
+    if not __get_validator_address_for_deal(deal):
+        click.echo(f"Validator not found for deal id {deal.deal_id}, cannot initialize rail")
+        return
+
+    from_address = w3.eth.account.from_key(from_private_key).address
+    operator_approval = FileCoinPay().get_operator_approval(utils.get_env('USDC_TOKEN'),
+                                                            from_address,
+                                                            deal.validator_address)
+
+    if not operator_approval.is_approved:
+        click.echo(f"Operator not approved for deal id {deal.deal_id}, cannot initialize rail")
+        return
+
     if deal.rail_id:
         click.echo(f"Rail already initialized for deal id {deal.deal_id}: {deal.rail_id}")
         return
 
     if not utils.ask_user_confirm(f"Initialize FileCoinPay rail for deal id {deal.deal_id}?", default_answer=True): return
 
-    _ = __get_validator_address_for_deal(deal)  # just verify
     tx_hash = FileCoinPayValidator(deal.validator_address).create_rail(utils.get_env('USDC_TOKEN'), from_private_key)
 
     click.echo(f"FileCoinPay rail initialized for deal id {deal.deal_id}: {tx_hash}")

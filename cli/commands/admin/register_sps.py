@@ -11,41 +11,37 @@ def __update_provider_params(provider: SPRegistryProvider,
                              different_parameters: dict,
                              from_private_key: str):
     #
-    if provider.max_deal_duration_days != registered_info.max_deal_duration_days or provider.min_deal_duration_days != registered_info.min_deal_duration_days:
+    if (provider.max_deal_duration_days, provider.min_deal_duration_days) != (registered_info.max_deal_duration_days, registered_info.min_deal_duration_days):
         _different_parameters = {k: v for k, v in different_parameters.items() if k in ['max_deal_duration_days', 'min_deal_duration_days']}
-        if not utils.ask_user_confirm(f"Updating (max_deal_duration_days, min_deal_duration_days) for provider {provider.provider_id}: {_different_parameters}",
-                                      default_answer=True): return
 
-        tx_hash = SPRegistry().set_deal_duration_limits(provider.provider_id, provider.min_deal_duration_days, provider.max_deal_duration_days, from_private_key)
-        click.echo(f"Updated deal duration limits for provider {provider.provider_id}: {tx_hash}")
+        if utils.ask_user_confirm(f"Updating (max_deal_duration_days, min_deal_duration_days) for provider {provider.provider_id}: {_different_parameters}",
+                                  default_answer=True):
+            tx_hash = SPRegistry().set_deal_duration_limits(provider.provider_id, provider.min_deal_duration_days, provider.max_deal_duration_days, from_private_key)
+            click.echo(f"Updated deal duration limits for provider {provider.provider_id}: {tx_hash}")
 
     if provider.price_per_sector_per_month != registered_info.price_per_sector_per_month:
-        if not utils.ask_user_confirm(f"Updating price_per_sector_per_month for provider {provider.provider_id}: {different_parameters['price_per_sector_per_month']}",
-                                      default_answer=True): return
-
-        tx_hash = SPRegistry().set_price(provider.provider_id, provider.price_per_sector_per_month, from_private_key)
-        click.echo(f"Updated price per sector per month for provider {provider.provider_id}: {tx_hash}")
+        if utils.ask_user_confirm(f"Updating price_per_sector_per_month for provider {provider.provider_id}: {different_parameters['price_per_sector_per_month']}",
+                                  default_answer=True):
+            tx_hash = SPRegistry().set_price(provider.provider_id, provider.price_per_sector_per_month, from_private_key)
+            click.echo(f"Updated price per sector per month for provider {provider.provider_id}: {tx_hash}")
 
     if provider.capabilities != registered_info.capabilities:
-        if not utils.ask_user_confirm(f"\nUpdating capabilities for provider {provider.provider_id}: {different_parameters['capabilities']}", default_answer=True): return
-
-        tx_hash = SPRegistry().set_capabilities(provider.provider_id,
-                                                provider.capabilities,
-                                                from_private_key)
-        click.echo(f"Updated capabilities for provider {provider.provider_id}: {tx_hash}")
+        if utils.ask_user_confirm(f"\nUpdating capabilities for provider {provider.provider_id}: {different_parameters['capabilities']}", default_answer=True):
+            tx_hash = SPRegistry().set_capabilities(provider.provider_id,
+                                                    provider.capabilities,
+                                                    from_private_key)
+            click.echo(f"Updated capabilities for provider {provider.provider_id}: {tx_hash}")
 
     if provider.payee_address != registered_info.payee_address:
-        if not utils.ask_user_confirm(f"Updating payee_address for provider {provider.provider_id}: {different_parameters['payee_address']}", default_answer=True): return
-
-        tx_hash = SPRegistry().set_payee(provider.provider_id, provider.payee_address, from_private_key)
-        click.echo(f"Updated payee address for provider {provider.provider_id}: {tx_hash}")
+        if utils.ask_user_confirm(f"Updating payee_address for provider {provider.provider_id}: {different_parameters['payee_address']}", default_answer=True):
+            tx_hash = SPRegistry().set_payee(provider.provider_id, provider.payee_address, from_private_key)
+            click.echo(f"Updated payee address for provider {provider.provider_id}: {tx_hash}")
 
     if provider.available_bytes != registered_info.available_bytes:
-        if not utils.ask_user_confirm(f"Updating available_bytes for provider {provider.provider_id}: {different_parameters['available_bytes']}",
-                                      default_answer=True): return
-
-        tx_hash = SPRegistry().update_available_space(provider.provider_id, provider.available_bytes, from_private_key)
-        click.echo(f"Updated available bytes for provider {provider.provider_id}: {tx_hash}")
+        if utils.ask_user_confirm(f"Updating available_bytes for provider {provider.provider_id}: {different_parameters['available_bytes']}",
+                                  default_answer=True):
+            tx_hash = SPRegistry().update_available_space(provider.provider_id, provider.available_bytes, from_private_key)
+            click.echo(f"Updated available bytes for provider {provider.provider_id}: {tx_hash}")
 
     if provider.organization_address != registered_info.organization_address:
         click.echo(f"Different organization_address for provider {provider.provider_id} cannot be updated: {different_parameters['organization_address']}")

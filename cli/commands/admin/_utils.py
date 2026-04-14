@@ -43,6 +43,7 @@ def get_db_sps(db_url: str, all: bool = False) -> list[SPRegistryProvider]:
 
         return int(result)
 
+    # TODO is kyc_status == approved the only condition to register SP on chain?
     organizations = SPRegistryDB(db_url).get_providers('approved' if not all else None)
     result: list[SPRegistryProvider] = []
 
@@ -78,8 +79,8 @@ def get_db_sps(db_url: str, all: bool = False) -> list[SPRegistryProvider]:
             ),
             available_bytes=5 * 1024 * 1024 * 1024,
             price_per_sector_per_month=price_per_tib_to_price_per_sector(org.min_price_per_tib_usd, org.payment_types),
-            min_deal_duration_days=org.deal_duration_min_months * 30,
-            max_deal_duration_days=min(org.deal_duration_max_months * 30, 1278),
+            min_deal_duration_days=org.deal_duration_min_months * 30,  # PoRep market smart contracts assumes month == 30 days
+            max_deal_duration_days=min(org.deal_duration_max_months * 30, 1278),  # PoRep market smart contracts assumes month == 30 days
             payee_address=org.payment_address_evm
         ))
 

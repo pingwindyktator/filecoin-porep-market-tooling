@@ -99,7 +99,9 @@ def _deposit_and_approve_operator(deal_id: int, from_private_key: str) -> str | 
     lockup_allowance = utils.MAX_UINT256
     max_lockup_period = utils.MAX_UINT256
 
-    # TODO deposit 0 if enough filecoinpay funds?
+    # TODO deposit 0 if enough filecoinpay funds? deposit only missing funds?
+    # this code now deposit full deposit_amount for the deal only logging the filecoinpay_available_funds
+    # this is intentional
     if not utils.ask_user_confirm(f"Deposit {deposit_amount_tokens} {token_name} for deal id {deal.deal_id} from address {from_address} and approve operator\n"
                                   f"  Current token balance: {token_balance_tokens} {token_name}\n"
                                   f"  Current FileCoinPay account available funds: {filecoinpay_available_funds_tokens} {token_name}\n"

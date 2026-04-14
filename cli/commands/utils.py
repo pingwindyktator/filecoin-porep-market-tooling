@@ -27,15 +27,19 @@ def get_chain_id() -> int:
 
 
 def print_info():
-    click.echo(f"Chain ID: {get_chain_id()}")
-    click.echo(f"RPC_URL={utils.get_env('RPC_URL')}")
+    try:
+        click.echo(f"Chain ID: {get_chain_id()}")
+    except Exception as e:
+        click.echo(f"Error getting chain ID: {e}\n")
+
+    click.echo(f"RPC_URL={utils.get_env('RPC_URL', required=False)}")
     click.echo()
-    click.echo(f"POREP_MARKET={utils.get_env('POREP_MARKET')}")
-    click.echo(f"CLIENT_CONTRACT={utils.get_env('CLIENT_CONTRACT')}")
-    click.echo(f"SP_REGISTRY={utils.get_env('SP_REGISTRY')}")
-    click.echo(f"VALIDATOR_FACTORY={utils.get_env('VALIDATOR_FACTORY')}")
-    click.echo(f"FILECOIN_PAY={utils.get_env('FILECOIN_PAY')}")
-    click.echo(f"USDC_TOKEN={utils.get_env('USDC_TOKEN')}")
+    click.echo(f"POREP_MARKET={utils.get_env('POREP_MARKET', required=False)}")
+    click.echo(f"CLIENT_CONTRACT={utils.get_env('CLIENT_CONTRACT', required=False)}")
+    click.echo(f"SP_REGISTRY={utils.get_env('SP_REGISTRY', required=False)}")
+    click.echo(f"VALIDATOR_FACTORY={utils.get_env('VALIDATOR_FACTORY', required=False)}")
+    click.echo(f"FILECOIN_PAY={utils.get_env('FILECOIN_PAY', required=False)}")
+    click.echo(f"USDC_TOKEN={utils.get_env('USDC_TOKEN', required=False)}")
     click.echo()
     click.echo(f"DRY_RUN={is_dry_run()}")
     click.echo(f"DEBUG={utils.get_env('DEBUG', default='False').capitalize()}")

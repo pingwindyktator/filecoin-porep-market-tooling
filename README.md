@@ -27,7 +27,7 @@ This means that the app does not wait for the transaction receipt after sending 
 This behaviour may change in the future.
 - Read-only operations does not require confirmations.
 - Read-only operations does not require `--private-key` set, though some of them require `--address`.
-- The app operates on ETH 0x-addresses and **FEVM Smart Contracts** and does not fully support Filecoin f-addresses.
+- The app operates on ETH 0x-addresses and **FEVM smart contract** and does not fully support Filecoin f-addresses.
 
 
 ## Security considerations

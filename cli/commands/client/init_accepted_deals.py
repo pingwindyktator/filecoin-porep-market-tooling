@@ -1,12 +1,11 @@
 import sys
-
 import click
 
 from web3.auto import w3
 from cli.commands.client._client import client_private_key
 from cli.services.contracts.filecoin_pay import FileCoinPay
 from cli.services.contracts.filecoinpay_validator import FileCoinPayValidator
-from cli.services.contracts.porep_market import PoRepMarketDealState, PoRepMarketDealProposal
+from cli.services.contracts.porep_market import PoRepMarketDealState, PoRepMarketDealProposal, PoRepMarket
 from cli.services.contracts.usdc_token import USDCToken
 from cli.services.contracts.validator_factory import ValidatorFactory
 from cli import utils
@@ -34,24 +33,18 @@ def _init_accepted_deals(from_private_key: str):
     for deal in accepted_deals:
         click.echo(f"\nDeal id {deal.deal_id}: {utils.json_pretty(deal)}\n")
 
-        _deploy_and_set_validator(deal, from_private_key)
-        _deposit_and_approve_operator(deal, from_private_key)
-        _initialize_rail(deal, from_private_key)
+        _deploy_and_set_validator(deal.deal_id, from_private_key)
+        _deposit_and_approve_operator(deal.deal_id, from_private_key)
+        _initialize_rail(deal.deal_id, from_private_key)
 
     # TODO wait for tx after steps
+    click.echo('\n\nAll done!')
     click.echo(f"\nRun {sys.argv[0]} client deposit-for-all-deals to make sure you have enough FileCoin pay funds deposited for all your accepted deals")
 
 
-def __get_validator_address_for_deal(deal: PoRepMarketDealProposal) -> str:
-    result = ValidatorFactory().get_instance(deal.deal_id)
+def _deploy_and_set_validator(deal_id: int, from_private_key: str) -> str | None:
+    deal = PoRepMarket().get_deal_proposal(deal_id)
 
-    if result != deal.validator_address:
-        raise Exception(f"Validator address {result} does not match expected {deal.validator_address} for deal id {deal.deal_id}")
-
-    return result
-
-
-def _deploy_and_set_validator(deal: PoRepMarketDealProposal, from_private_key: str) -> str | None:
     if deal.state != PoRepMarketDealState.Accepted:
         raise Exception(f"Deal id {deal.deal_id} is not in accepted state")
 
@@ -67,7 +60,8 @@ def _deploy_and_set_validator(deal: PoRepMarketDealProposal, from_private_key: s
     return tx_hash
 
 
-def _deposit_and_approve_operator(deal: PoRepMarketDealProposal, from_private_key: str) -> str | None:
+def _deposit_and_approve_operator(deal_id: int, from_private_key: str) -> str | None:
+    deal = PoRepMarket().get_deal_proposal(deal_id)
     if not __get_validator_address_for_deal(deal):
         click.echo(f"Validator not found for deal id {deal.deal_id}, cannot deposit and approve operator")
         return
@@ -130,7 +124,8 @@ def _deposit_and_approve_operator(deal: PoRepMarketDealProposal, from_private_ke
     return tx_hash
 
 
-def _initialize_rail(deal: PoRepMarketDealProposal, from_private_key: str) -> str | None:
+def _initialize_rail(deal_id: int, from_private_key: str) -> str | None:
+    deal = PoRepMarket().get_deal_proposal(deal_id)
     if not __get_validator_address_for_deal(deal):
         click.echo(f"Validator not found for deal id {deal.deal_id}, cannot initialize rail")
         return
@@ -154,3 +149,12 @@ def _initialize_rail(deal: PoRepMarketDealProposal, from_private_key: str) -> st
 
     click.echo(f"FileCoinPay rail initialized for deal id {deal.deal_id}: {tx_hash}")
     return tx_hash
+
+
+def __get_validator_address_for_deal(deal: PoRepMarketDealProposal) -> str:
+    result = ValidatorFactory().get_instance(deal.deal_id)
+
+    if result != deal.validator_address:
+        raise Exception(f"Validator address {result} does not match expected {deal.validator_address} for deal id {deal.deal_id}")
+
+    return result

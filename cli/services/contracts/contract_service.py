@@ -128,8 +128,7 @@ class ContractService:
                                       f"== Gas Price: {self.w3.eth.gas_price} wei\n"
                                       f"== Gas: {transaction['gas']}\n"
                                       f"== Value: {transaction['value']} wei\n"
-                                      f"This is the final confirmation"):
-            # TODO fail instead?
+                                      f"This is the final confirmation", default_answer=_dry_run):
             _dry_run = True
 
         click.echo()

@@ -29,6 +29,8 @@ def _manage_proposed_deals(from_private_key: str, answer: str | None = None):
         else:
             raise ValueError(f"Invalid answer: {_answer}")
 
+    click.echo('\n\nAll done!')
+
 
 @click.command()
 @click.argument('action', required=False, type=click.Choice(['accept', 'reject'], case_sensitive=False))

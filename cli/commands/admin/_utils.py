@@ -32,8 +32,8 @@ def get_db_sps(db_url: str, all: bool = False) -> list[SPRegistryProvider]:
         return max([_bandwidth_tier_to_mbps(tier) for tier in tiers]) if tiers else 0
 
     # TODO
-    def price_per_tib_to_price_per_sector(price_tib_per_month: float, payment_types) -> int:
-        if payment_types[0] != "USDFC":
+    def price_per_tib_to_price_per_sector(price_tib_per_month: float, payment_types: list[str]) -> int:
+        if len(payment_types) != 1 or payment_types[0] != "USDFC":
             raise ValueError(f"Unsupported payment type: {payment_types[0]}")
 
         # Convert price from per TiB to per sector (32 GiB)
@@ -49,7 +49,8 @@ def get_db_sps(db_url: str, all: bool = False) -> list[SPRegistryProvider]:
     for org in organizations:
         if org.deal_duration_max_months * 30 > 1278:
             utils.ask_user_confirm_or_fail(
-                f"Provider {org.id} has max deal duration of {org.deal_duration_max_months} months, which exceeds the SPRegistry contract limit of 1278 days (42 months). It will be truncated to 1278 days. Continue?",
+                f"Provider {org.id} has max deal duration of {org.deal_duration_max_months} months, "
+                f"which exceeds the SPRegistry contract limit of 1278 days (42 months). It will be truncated to 1278 days. Continue?",
                 default_answer=True)
 
         if Address.is_filecoin_address(org.organization_address):

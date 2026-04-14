@@ -77,7 +77,7 @@ def _register_sps(providers: list[SPRegistryProvider], from_private_key: str):
 
 
 @click.command()
-@click.option('--db-url', envvar='SP_REGISTRY_DATABASE_URL', show_envvar=True, help="SP Registry database connection string.")
+@click.option('--db-url', envvar='SP_REGISTRY_DATABASE_URL', show_envvar=True, help="SP Registry database connection string.", required=True)
 def register_db_sps(db_url: str):
     """
     Register Storage Providers from DB at DB_URL.

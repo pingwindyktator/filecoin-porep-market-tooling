@@ -1,6 +1,7 @@
 import click
 
 from web3 import Web3
+from web3.auto import w3
 from cli import utils
 from cli._cli import is_dry_run
 from cli.services.contracts.contract_service import Address
@@ -20,8 +21,10 @@ def get_all_deals(state: PoRepMarketDealState = None, organization: Address = No
 
     return deals
 
+
 def get_chain_id() -> int:
     return Web3(Web3.HTTPProvider(utils.get_env('RPC_URL'))).eth.chain_id
+
 
 def print_info():
     click.echo(f"Chain ID: {get_chain_id()}")
@@ -36,3 +39,12 @@ def print_info():
     click.echo()
     click.echo(f"DRY_RUN={is_dry_run()}")
     click.echo(f"DEBUG={utils.get_env('DEBUG', default='False').capitalize()}")
+
+
+def validate_address_matches_private_key(address: Address, private_key: str | None):
+    if not private_key: raise Exception("Private key is not set")
+
+    derived_address = w3.eth.account.from_key(private_key).address
+
+    if derived_address != address:
+        raise Exception(f"Address {address} does not match private key {utils.private_key_to_log_string(private_key)} (expected: {derived_address})")

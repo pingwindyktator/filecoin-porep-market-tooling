@@ -2,42 +2,97 @@
 
 # Testing and development purposes.
 # Simple tool that runs all CLI get commands that requires no user input.
-# Expects success process exit and nothing more.
+# Expects process exit code and nothing more.
+# This is not designed to be a comprehensive test suite.
+# Hardcoded private keys and addresses are used for testing purposes only and should never be used anywhere else.
 
 set -euo pipefail
 
 # shellcheck disable=SC2155
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly CLI_PATH="${SCRIPT_DIR}/../porep_tooling_cli.py"
 
 (
-  "${SCRIPT_DIR}"/../porep_tooling_cli.py >/dev/null &&
-  "${SCRIPT_DIR}"/../porep_tooling_cli.py info --help >/dev/null &&
+  # misc tests
+  "${CLI_PATH}"             >/dev/null &&
+  "${CLI_PATH}" info --help >/dev/null &&
 
-  "${SCRIPT_DIR}"/../porep_tooling_cli.py admin --address "0x5CF0365dA2F0a83c70Dfb4b96067c0e3cd2Ea951" info >/dev/null &&
-  "${SCRIPT_DIR}"/../porep_tooling_cli.py admin --private-key "b73163861add8c8280f62958432131b7a5e69a9276a3cfa26fcaa92ff356fadc" info >/dev/null &&
-  "${SCRIPT_DIR}"/../porep_tooling_cli.py admin get-deals --help>/dev/null &&
+  "${CLI_PATH}" admin --address "0x5CF0365dA2F0a83c70Dfb4b96067c0e3cd2Ea951" info                           >/dev/null &&
+  "${CLI_PATH}" admin --private-key "b73163861add8c8280f62958432131b7a5e69a9276a3cfa26fcaa92ff356fadc" info >/dev/null &&
+  "${CLI_PATH}" admin get-deals --help>/dev/null &&
 
-  "${SCRIPT_DIR}"/../porep_tooling_cli.py admin get-deals proposed >/dev/null &&
-  "${SCRIPT_DIR}"/../porep_tooling_cli.py admin get-devnet-sps >/dev/null &&
-  "${SCRIPT_DIR}"/../porep_tooling_cli.py admin get-registered-sps >/dev/null &&
-  "${SCRIPT_DIR}"/../porep_tooling_cli.py admin get-db-sps --help >/dev/null &&
-  "${SCRIPT_DIR}"/../porep_tooling_cli.py admin register-db-sps --help >/dev/null &&
-  "${SCRIPT_DIR}"/../porep_tooling_cli.py admin register-devnet-sps --help >/dev/null &&
+  # admin tests
+  "${CLI_PATH}" admin get-deals proposed         >/dev/null &&
+  "${CLI_PATH}" admin get-devnet-sps             >/dev/null &&
+  "${CLI_PATH}" admin get-registered-sps         >/dev/null &&
+  "${CLI_PATH}" admin get-db-sps --help          >/dev/null &&
+  "${CLI_PATH}" admin register-db-sps --help     >/dev/null &&
+  "${CLI_PATH}" admin register-devnet-sps --help >/dev/null &&
 
-  "${SCRIPT_DIR}"/../porep_tooling_cli.py client get-deals rejected >/dev/null &&
-  "${SCRIPT_DIR}"/../porep_tooling_cli.py client get-filecoin-pay-account >/dev/null &&
-  "${SCRIPT_DIR}"/../porep_tooling_cli.py client init-accepted-deals --help >/dev/null &&
-  "${SCRIPT_DIR}"/../porep_tooling_cli.py client deposit-for-all-deals --help >/dev/null &&
-  "${SCRIPT_DIR}"/../porep_tooling_cli.py client propose-deal-from-manifest --help >/dev/null &&
+  # client tests
+  "${CLI_PATH}" client get-deals rejected                >/dev/null &&
+  "${CLI_PATH}" client get-filecoin-pay-account          >/dev/null &&
+  "${CLI_PATH}" client init-accepted-deals --help        >/dev/null &&
+  "${CLI_PATH}" client deposit-for-all-deals --help      >/dev/null &&
+  "${CLI_PATH}" client propose-deal-from-manifest --help >/dev/null &&
 
-  "${SCRIPT_DIR}"/../porep_tooling_cli.py sp get-deals accepted >/dev/null &&
-  "${SCRIPT_DIR}"/../porep_tooling_cli.py sp accept-deal --help >/dev/null &&
-  "${SCRIPT_DIR}"/../porep_tooling_cli.py sp reject-deal --help >/dev/null &&
-  "${SCRIPT_DIR}"/../porep_tooling_cli.py sp manage-proposed-deals --help >/dev/null &&
+  # sp tests
+  "${CLI_PATH}" sp get-deals accepted           >/dev/null &&
+  "${CLI_PATH}" sp accept-deal --help           >/dev/null &&
+  "${CLI_PATH}" sp reject-deal --help           >/dev/null &&
+  "${CLI_PATH}" sp manage-proposed-deals --help >/dev/null &&
 
+  ! ("${CLI_PATH}" sp accept-deal 4242 >/dev/null 2>&1) &&
+
+  # test keys
+
+  # not matching keys but info command should work
+  (ADMIN_PRIVATE_KEY="75d5bb290fb82d5b86a0a73b30e8e6dfb74d694f565a13f163d87d4370067729" \
+    "${CLI_PATH}" admin --address "0x999999cf1046e68e36E1aA2E0E07105eDDD1f08E" info >/dev/null) &&
+
+  "${CLI_PATH}" admin --address "0x999999cf1046e68e36E1aA2E0E07105eDDD1f08E" --private-key "75d5bb290fb82d5b86a0a73b30e8e6dfb74d694f565a13f163d87d4370067729" info >/dev/null &&
+
+  # not matching keys but get commands should work
+  (CLIENT_PRIVATE_KEY="75d5bb290fb82d5b86a0a73b30e8e6dfb74d694f565a13f163d87d4370067729" \
+    "${CLI_PATH}" client --address "0x999999cf1046e68e36E1aA2E0E07105eDDD1f08E" get-deals >/dev/null) &&  # not matching with env
+
+  "${CLI_PATH}" client --address "0x999999cf1046e68e36E1aA2E0E07105eDDD1f08E" --private-key "75d5bb290fb82d5b86a0a73b30e8e6dfb74d694f565a13f163d87d4370067729" get-deals >/dev/null &&
+
+  # matching keys
+  "${CLI_PATH}" admin --address "0x4300EbD613b8E965A81B54aCdF1fA843758420DA" --private-key "75d5bb290fb82d5b86a0a73b30e8e6dfb74d694f565a13f163d87d4370067729" info --test-keys >/dev/null &&
+  "${CLI_PATH}" admin --private-key "75d5bb290fb82d5b86a0a73b30e8e6dfb74d694f565a13f163d87d4370067729" info --test-keys >/dev/null &&
+
+  (ADMIN_PRIVATE_KEY="75d5bb290fb82d5b86a0a73b30e8e6dfb74d694f565a13f163d87d4370067729" \
+    "${CLI_PATH}" admin --address "0x4300EbD613b8E965A81B54aCdF1fA843758420DA" info --test-keys >/dev/null) &&
+
+  (ADMIN_PRIVATE_KEY="75d5bb290fb82d5b86a0a73b30e8e6dfb74d694f565a13f163d87d4370067729" \
+    "${CLI_PATH}" admin info --test-keys >/dev/null) &&
+
+  # fail when no matching keys
+  ! (ADMIN_PRIVATE_KEY="75d5bb290fb82d5b86a0a73b30e8e6dfb74d694f565a13f163d87d4370067729" \
+    "${CLI_PATH}" admin --address "0x999999cf1046e68e36E1aA2E0E07105eDDD1f08E" info --test-keys >/dev/null 2>&1) &&
+
+  ! ("${CLI_PATH}" admin --address "0x999999cf1046e68e36E1aA2E0E07105eDDD1f08E" --private-key "75d5bb290fb82d5b86a0a73b30e8e6dfb74d694f565a13f163d87d4370067729" info --test-keys >/dev/null 2>&1) &&
+
+  # fail when no keys provided
+  ! (ADMIN_PRIVATE_KEY="" \
+    "${CLI_PATH}" admin --address "0x999999cf1046e68e36E1aA2E0E07105eDDD1f08E" info --test-keys >/dev/null 2>&1) &&
+
+  ! (ADMIN_PRIVATE_KEY="" \
+    "${CLI_PATH}" admin info --test-keys >/dev/null 2>&1) &&
+
+  # dont fail when no keys provided for get commands
+  ADMIN_PRIVATE_KEY="" \
+    "${CLI_PATH}" admin --address "0x999999cf1046e68e36E1aA2E0E07105eDDD1f08E" get-deals >/dev/null &&
+
+  CLIENT_PRIVATE_KEY="" \
+    "${CLI_PATH}" client --address "0x999999cf1046e68e36E1aA2E0E07105eDDD1f08E" get-deals >/dev/null &&
+
+  ADMIN_PRIVATE_KEY="" \
+    "${CLI_PATH}" admin get-deals >/dev/null &&
 
   echo "All tests passed"
 ) || {
-  echo "Error: CLI test failed" >&2
+  echo "Error: CLI test failed: expected different exit code" >&2
   exit 1
 }

@@ -118,3 +118,9 @@ def int_to_bytes(x: int, size: int = 32) -> bytes:
 
 def int_from_bytes(xbytes: bytes) -> int:
     return int.from_bytes(xbytes, 'big')
+
+
+def private_key_to_log_string(private_key: str) -> str:
+    if len(private_key) < 10: return "*" * len(private_key)
+
+    return f"{private_key[:6]}...{private_key[-4:]}"

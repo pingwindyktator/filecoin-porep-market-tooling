@@ -1,38 +1,39 @@
+from datetime import datetime
+from cli import utils
+
 import json
 import psycopg
-
-from cli import utils
 
 
 @utils.json_dataclass()
 class SPRegistryDBProvider:
     id: int
     name: str
-    miner_ids: str
-    accepted_client_geographies: str
-    payment_types: str
+    miner_ids: list[str]
+    accepted_client_geographies: list[str]
+    payment_types: list[str]
     retrievability_guarantees: list[str]
     bandwidth_tier: list[str]
-    service_frequency: int
-    data_types: str
+    service_frequency: list[str]
+    data_types: list[str]
     customer_support_email: str
     contact_details: str
-    onboarding_bandwidth: int
+    onboarding_bandwidth: str
     payment_address: str
     organization_address: str
-    kyc_session_id: str
-    kyc_session_url: str
+    kyc_session_id: str | None
+    kyc_session_url: str | None
     kyc_status: str
-    kyc_completed_at: str
-    created_at: str
-    updated_at: str
-    geographical_location: str
+    kyc_completed_at: datetime | None
+    created_at: datetime
+    updated_at: datetime
+    geographical_location: list[str]
     kyc_email: str
     payment_address_evm: str
     deal_duration_min_months: int
     deal_duration_max_months: int
     min_price_per_tib_usd: float
-    sp_software: str
+    sp_software: list[str]
 
     @staticmethod
     def from_db(data) -> 'SPRegistryDBProvider':
@@ -55,8 +56,8 @@ class SPRegistryDBProvider:
             kyc_session_url=data[15],
             kyc_status=data[16],
             kyc_completed_at=f'{data[17]}',
-            created_at=f'{data[18]}',
-            updated_at=f'{data[19]}',
+            created_at=data[18],
+            updated_at=data[19],
             geographical_location=data[20],
             kyc_email=data[21],
             payment_address_evm=data[22],

@@ -10,10 +10,10 @@ ADMIN_PRIVATE_KEY: str | None = None
 
 
 @click.group()
-@click.option('--address', required=False, help="Admin address to use, default is address from --private-key option.")
+@click.option('--address', help="Admin address to use, default is address from --private-key option.")
 @click.option('--private-key', envvar='ADMIN_PRIVATE_KEY', help="Admin private key to use.", show_envvar=True)
-@click.option('--debug', help="Confirm current info before executing command.", is_flag=True, default=False, show_default=True)
-def admin(address: Address = None, private_key: str = None, debug: bool = False):
+@click.option('--info', help="Confirm current info before executing command.", is_flag=True, default=False, show_default=True)
+def admin(address: Address = None, private_key: str = None, info: bool = False):
     """
     Admin commands for managing the PoRep Market.
     """
@@ -22,9 +22,9 @@ def admin(address: Address = None, private_key: str = None, debug: bool = False)
     ADMIN_PRIVATE_KEY = private_key
 
     global ADMIN_ADDRESS
-    ADMIN_ADDRESS = Address(address if address else w3.eth.account.from_key(ADMIN_PRIVATE_KEY).address)
+    ADMIN_ADDRESS = Address(address) if address else Address(w3.eth.account.from_key(ADMIN_PRIVATE_KEY).address) if ADMIN_PRIVATE_KEY else None
 
-    if debug:
+    if info:
         _info()
         utils.ask_user_confirm("Continue?", default_answer=True)
 
@@ -35,21 +35,26 @@ def admin_address() -> Address:
 
 
 def admin_private_key() -> str:
-    if not ADMIN_PRIVATE_KEY: raise Exception("Admin private key is not set")
+    commands_utils.validate_address_matches_private_key(admin_address(), ADMIN_PRIVATE_KEY)
+
     return ADMIN_PRIVATE_KEY
 
 
 def _info():
-    click.echo(f"Admin address: {admin_address()}")
-    click.echo(f"Admin private key: {admin_private_key()[:6]}...{admin_private_key()[-4:]}")
+    click.echo(f"Admin address: {ADMIN_ADDRESS}")
+    click.echo(f"Admin private key: {utils.private_key_to_log_string(ADMIN_PRIVATE_KEY)}")
     click.echo()
     commands_utils.print_info()
 
 
 @click.command()
-def info():
+@click.option('--test-keys', is_flag=True, help="Fail if the private key does not matches provided address.", default=False, show_default=True)
+def info(test_keys: bool = False):
     """
     Display the current admin info.
     """
+
+    if test_keys:
+        commands_utils.validate_address_matches_private_key(admin_address(), admin_private_key())
 
     _info()

@@ -21,7 +21,7 @@ def _get_filecoin_pay_account(owner_address: Address, token_address: Address):
 
 
 @click.command()
-@click.option('--token-address', envvar='USDC_TOKEN', show_envvar=True, help="ERC20 token address to ask for.")
+@click.option('--token-address', envvar='USDC_TOKEN', show_envvar=True, help="ERC20 token address to ask for.", required=True)
 def get_filecoin_pay_account(token_address: Address):
     """
     Get client's FileCoinPay account for the organization and token address.

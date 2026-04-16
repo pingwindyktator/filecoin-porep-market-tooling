@@ -132,9 +132,9 @@ def get_db_sps(db_url: str,
 
         #
 
-        for miner_id in org.miner_ids:
+        for org_miner_id in org.miner_ids:
             result.append(SPRegistryProvider(
-                provider_id=miner_id,
+                provider_id=org_miner_id,
                 organization_address=organization_address,
                 capabilities=SPRegistrySLIThresholds(
                     retrievability_bps=retrievability_guarantees_to_bps(org.retrievability_guarantees),

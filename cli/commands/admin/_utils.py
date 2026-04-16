@@ -8,6 +8,7 @@ from cli.services.contracts.usdc_token import USDCToken
 from cli.services.sp_registry_db import SPRegistryDB
 
 
+# TODO LATER extract   # PoRep Market smart contracts assumes month == 30 days   to separate function
 def get_db_sps(db_url: str,
                kyc_status: str | None = None,
                organization_id: int | None = None,
@@ -57,7 +58,7 @@ def get_db_sps(db_url: str,
         return max([_bandwidth_tier_to_mbps(tier) for tier in tiers]) if tiers else 0
 
     def price_per_tib_tokens_to_per_sector(price_per_tib_tokens: float, payment_types: list[str]) -> int:
-        if not payment_types or len(payment_types) != 1 or payment_types[0] != "USDFC":
+        if not payment_types or len(payment_types) != 1 or payment_types[0] != "USDFC":  # TODO LATER axlUSDC?
             raise ValueError(f"Unsupported payment type: {payment_types}")
 
         price_per_tib = utils.from_tokens(price_per_tib_tokens, USDCToken().decimals())
@@ -101,7 +102,7 @@ def get_db_sps(db_url: str,
 
             if not utils.ask_user_confirm(
                     f"Organization {org.organization_address} [db_id {org.id}] has max deal duration of {org.deal_duration_max_months} months "
-                    f"({org.deal_duration_max_months * 30} days), "
+                    f"({org.deal_duration_max_months * 30} days), "  # PoRep Market smart contracts assumes month == 30 days
                     f"which exceeds the SPRegistry contract limit of {max_deal_duration_days} days. It will be truncated to this value. "
                     f"Return SPs from this organization?",
                     default_answer=True):
@@ -109,10 +110,24 @@ def get_db_sps(db_url: str,
         else:
             max_deal_duration_days = org.deal_duration_max_months * 30  # PoRep Market smart contracts assumes month == 30 days
 
-        if org.deal_duration_min_months * 30 > max_deal_duration_days:
+        # TODO LATER get minimum deral duration from smart contracts
+        if org.deal_duration_min_months * 30 < 180:  # PoRep Market smart contracts assumes month == 30 days
+            min_deal_duration_days = 6 * 30  # 6 months
+
+            if not utils.ask_user_confirm(
+                    f"Organization {org.organization_address} [db_id {org.id}] has min deal duration of {org.deal_duration_min_months} months "
+                    f"({org.deal_duration_min_months * 30} days), "  # PoRep Market smart contracts assumes month == 30 days
+                    f"which is below the SPRegistry contract minimum of {min_deal_duration_days} days. It will be increased to this value. "
+                    f"Return SPs from this organization?",
+                    default_answer=True):
+                continue
+        else:
+            min_deal_duration_days = org.deal_duration_min_months * 30  # PoRep Market smart contracts assumes month == 30 days
+
+        if min_deal_duration_days > max_deal_duration_days:  # PoRep Market smart contracts assumes month == 30 days
             utils.ask_user_ok(
-                f"Organization {org.organization_address} [db_id {org.id}] has min deal duration of {org.deal_duration_min_months} months, "
-                f"which exceeds the max deal duration of {org.deal_duration_max_months} months. "
+                f"Organization {org.organization_address} [db_id {org.id}] has min deal duration of {min_deal_duration_days} days, "
+                f"which exceeds the max deal duration of {max_deal_duration_days} days. "
                 f"Cannot return SPs from this organization")
             continue
 
@@ -144,7 +159,7 @@ def get_db_sps(db_url: str,
                 ),
                 available_bytes=humanfriendly.parse_size(org.capacity_commitment),
                 price_per_sector_per_month=price_per_tib_tokens_to_per_sector(org.min_price_per_tib_usd, org.payment_types),
-                min_deal_duration_days=org.deal_duration_min_months * 30,  # PoRep Market smart contracts assumes month == 30 days
+                min_deal_duration_days=min_deal_duration_days,
                 max_deal_duration_days=max_deal_duration_days,
                 payee_address=org.payment_address_evm
             ))

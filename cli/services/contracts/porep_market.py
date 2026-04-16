@@ -56,7 +56,7 @@ class PoRepMarketDealState(enum.Enum):
 @utils.json_dataclass()
 class PoRepMarketDealTerms:
     deal_size_bytes: int
-    price_per_sector_per_month: int  # Monthly price per 32 GiB sector in USDFC smallest units (wei-equivalent)
+    price_per_sector_per_month: int  # Monthly price per 32 GiB sector in USDC smallest units (wei-equivalent)
     duration_days: int  # Must be divisible by 30
 
 
@@ -85,6 +85,7 @@ class PoRepMarketDealProposal(PoRepMarketDealRequest):
     validator_address: Address
     state: PoRepMarketDealState
     rail_id: int
+    proposed_at_block: int
 
     def __post_init__(self):
         self.client_address = Address(self.client_address)
@@ -114,10 +115,11 @@ class PoRepMarketDealProposal(PoRepMarketDealRequest):
                 price_per_sector_per_month=int(data[4][1]),
                 duration_days=int(data[4][2]),
             ),
-            manifest_location=data[8],
             validator_address=data[5],
             state=PoRepMarketDealState(data[6]),
             rail_id=int(data[7]),
+            proposed_at_block=int(data[8]),
+            manifest_location=data[9],
         )
 
 

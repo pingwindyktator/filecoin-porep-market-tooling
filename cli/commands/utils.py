@@ -46,7 +46,7 @@ def print_info():
     click.echo(f"SP_REGISTRY={utils.get_env('SP_REGISTRY', required=False)}")
     click.echo(f"VALIDATOR_FACTORY={utils.get_env('VALIDATOR_FACTORY', required=False)}")
     click.echo(f"FILECOIN_PAY={utils.get_env('FILECOIN_PAY', required=False)}")
-    click.echo(f"USDFC_TOKEN={utils.get_env('USDFC_TOKEN', required=False)}")
+    click.echo(f"USDC_TOKEN={utils.get_env('USDC_TOKEN', required=False)}")
     click.echo()
     click.echo(f"DRY_RUN={is_dry_run()}")
     click.echo(f"DEBUG={utils.get_env('DEBUG', default='False').capitalize()}")

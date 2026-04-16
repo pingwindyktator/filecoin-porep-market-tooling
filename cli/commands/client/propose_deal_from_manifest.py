@@ -78,6 +78,8 @@ def _propose_deal_from_manifest(manifest_url: str,
 
     pieces_size_bytes = sum(piece["pieceSize"] for piece in pieces)
 
+    # TODO LATER validate params here?
+
     if pieces_size_bytes <= 0:
         raise Exception("Invalid deal size")
 
@@ -145,10 +147,11 @@ def _propose_deal_from_manifest(manifest_url: str,
               help="Retrievability guarantee in bps (basis points, e.g. 7550 = 75.50%); 0 means \"don't care\".")
 @click.option("--bandwidth-mbps", type=click.IntRange(0, 64000), required=True,
               help="Bandwidth guarantee in Mbps. Capped at ~64 Gbps.")
-@click.option("--price-per-sector-per-month", help="Monthly price per 32 GiB sector in USDFC smallest units (wei-equivalent).",
+# TODO LATER make this price-per-tib-per-month?
+@click.option("--price-per-sector-per-month", help="Monthly price per 32 GiB sector in USDC smallest units (wei-equivalent).",
               type=click.IntRange(min=0), required=True)
-@click.option("--duration-months", type=click.IntRange(min=1), required=True,
-              help="Deal duration in months.")
+@click.option("--duration-months", type=click.IntRange(min=6), required=True,
+              help="Deal duration in months. Minimum supported is 6 months.")
 @click.option("--latency-ms", type=click.IntRange(min=0), required=True,
               help="Latency guarantee in milliseconds.")
 @click.option("--indexing-pct", type=click.IntRange(0, 100), default=0, show_default=True,
@@ -162,6 +165,11 @@ def propose_deal_from_manifest(manifest_url: str,
                                indexing_pct: int):
     """
     Interactively propose a deal from MANIFEST_URL with the specified parameters.
+
+    \b
+    1. Fetch and validate manifest from a given MANIFEST_URL,
+    2. prepare and confirm deal proposal details,
+    3. propose deal on-chain via PoRep Market contract.
 
     MANIFEST_URL - URL of the deal manifest file to download.
     """
@@ -178,7 +186,7 @@ def propose_deal_from_manifest(manifest_url: str,
 
 # TODO LATER remove me
 @click.command()
-@click.argument("manifest-url", default="http://117.55.199.67:9090/api/preparation/1/piece")
+@click.argument("manifest-url", default="http://117.55.199.67:9090/api/preparation/fsboard/piece")
 def propose_deal_from_manifest_mocked(manifest_url: str):
     """
     Testing and development purposes.

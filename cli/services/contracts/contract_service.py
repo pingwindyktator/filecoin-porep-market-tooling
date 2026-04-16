@@ -59,7 +59,6 @@ class Address(str):
         if not response["result"] or not Web3.is_address(response["result"]):
             raise ValueError(f"Invalid response for FilecoinAddressToEthAddress: {response['result']}")
 
-        # noinspection PyTypeChecker
         return Address(response["result"])
 
 
@@ -72,8 +71,6 @@ class ContractService:
             contract_abi = json.load(abi_file)
 
             self.w3 = Web3(Web3.HTTPProvider(rpc_url))
-
-            # noinspection PyTypeChecker
             self.contract = self.w3.eth.contract(address=Address(contract_address), abi=contract_abi)
 
     def _get_class_name(self):

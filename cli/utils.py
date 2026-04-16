@@ -5,7 +5,7 @@ import os
 
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(dotenv_path=None)
 
 MAX_UINT256 = 2 ** 256 - 1
 
@@ -20,7 +20,7 @@ def get_env(name, required=True, default=None):
         value = default
 
     if is_empty(value) and required:
-        raise Exception(f"Environment variable {name} is not set, see .env file (copy from .env.example)")
+        raise Exception(f"Environment variable {name} is not set, see .env file")
 
     return value
 
@@ -52,7 +52,7 @@ def ask_user_string(prompt: str, default_answer: str | None = None, valid_answer
         else:
             continue
 
-    return ""  # should not happen
+    assert False  # should not happen
 
 
 # TODO LATER grace exit instead of exception

@@ -38,9 +38,9 @@ class SPRegistryProviderInfo(SPRegistryProvider):
     @staticmethod
     def from_web3(provider_id, data) -> "SPRegistryProviderInfo | None":
         if not Address(data[0]):
-            # noinspection PyTypeChecker
             return None
 
+        # noinspection PyArgumentList
         return SPRegistryProviderInfo(
             provider_id=int(provider_id),
             organization_address=Address(data[0]),

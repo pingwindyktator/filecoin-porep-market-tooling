@@ -1,21 +1,23 @@
 #!/bin/bash
 
 # Testing and development purposes.
+
+# TODO LATER validate is output is always json
 # Simple tool that runs all CLI get commands that requires no user input.
 # Expects process exit code and nothing more.
 # This is not designed to be a comprehensive test suite.
 # Hardcoded private keys and addresses are used for testing purposes only and should never be used anywhere else.
-
-# TODO LATER create .env.test for this and run github CI?
-# !!! IMPORTANT
-# This script assumes you've got .env file with all ADMIN_PRIVATE_KEY, CLIENT_PRIVATE_KEY and SP_PRIVATE_KEY set to correct values.
-# However, it will never execute any blockchain transactions, as those always require user confirmation.
 
 set -euo pipefail
 
 # shellcheck disable=SC2155
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly CLI_PATH="${SCRIPT_DIR}/../porep_tooling_cli.py"
+
+# export all env vars from .env.test
+set -a
+source "${SCRIPT_DIR}/.env.test"
+set +a
 
 (
   # misc tests

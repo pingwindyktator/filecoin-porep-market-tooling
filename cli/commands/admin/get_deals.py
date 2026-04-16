@@ -19,9 +19,8 @@ def get_deals(state: str | None, deal_id: int | None = None):
     _state = PoRepMarketDealState.from_string(state)
 
     if deal_id is not None:
-        result = [PoRepMarket().get_deal_proposal(deal_id)]
-        if _state:
-            result = [deal for deal in result if deal.state == _state]
+        deal = PoRepMarket().get_deal_proposal(deal_id)
+        result = [deal] if deal and (_state is None or deal.state == _state) else []
     else:
         result = commands_utils.get_all_deals(_state)
 

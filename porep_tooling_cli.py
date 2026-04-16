@@ -69,7 +69,8 @@ if __name__ == "__main__":
     try:
         import dotenv
 
-        dotenv.load_dotenv()
+        dotenv.load_dotenv(dotenv_path=None)
+
         DEBUG = os.getenv("DEBUG", default="false").strip().lower() == "true"
         LOG_FILE = os.getenv("_LOG_FILE", default=LOG_FILE)
         ERROR_LOG_FILE = os.getenv("_ERROR_LOG_FILE", default=ERROR_LOG_FILE)

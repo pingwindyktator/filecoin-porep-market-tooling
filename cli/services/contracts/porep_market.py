@@ -88,7 +88,6 @@ class PoRepMarketDealProposal(PoRepMarketDealRequest):
     @staticmethod
     def from_web3(data, expected_deal_id: int | None = None) -> "PoRepMarketDealProposal | None":
         if not Address(data[1]):
-            # noinspection PyTypeChecker
             return None
 
         if expected_deal_id is not None and expected_deal_id != data[0]:

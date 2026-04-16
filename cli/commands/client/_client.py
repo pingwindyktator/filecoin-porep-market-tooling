@@ -3,7 +3,7 @@ from web3.auto import w3
 
 from cli import utils
 from cli.commands import utils as commands_utils
-from cli.services.contracts.contract_service import Address
+from cli.services.contracts.contract_service import Address, ContractService
 
 CLIENT_ADDRESS: str | None = None
 CLIENT_PRIVATE_KEY: str | None = None
@@ -72,3 +72,13 @@ def info(test_keys: bool = False):
         _ = client_private_key()  # validate only
 
     _info()
+
+
+@click.command()
+def wait():
+    """
+    Wait for all pending transactions from the current private key to be mined and exit. Useful when executing a series of commands.
+    """
+
+    # wait for pending transactions
+    _ = ContractService.get_address_nonce(client_address())

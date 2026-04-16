@@ -1,4 +1,4 @@
-name: Pylint
+name: Run pylint
 
 on: [ push ]
 
@@ -21,6 +21,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pylint
-      - name: Analysing the code with pylint
+      - name: Run pylint
         run: |
-          git ls-files -z '*.py' | xargs -0 --no-run-if-empty pylint
+          pylint $(git ls-files '*.py') || pylint_exit=$?
+          
+          # Return error only for error + fatal
+          if [ $((pylint_exit & 3)) -ne 0 ]; then
+            exit $pylint_exit
+          fi

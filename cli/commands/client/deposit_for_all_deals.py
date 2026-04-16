@@ -9,6 +9,7 @@ from cli.services.contracts.porep_market import PoRepMarketDealState, PoRepMarke
 from cli.services.contracts.usdc_token import USDCToken
 
 
+# TODO LATER improve this
 @click.command()
 @click.option("--months", type=click.IntRange(min=0), default=1, show_default=True,
               help="Number of months to calculate required deposit amount for.")
@@ -30,7 +31,7 @@ def _deposit_for_all_deals(months: int, from_private_key: str):
 # deposits USDC funds to FileCoinPay account for X month of storing deals
 def __deposit_for_all_deals(deals: list[PoRepMarketDealProposal], months: int, from_private_key: str) -> str | None:
     from_address = w3.eth.account.from_key(from_private_key).address
-    filecoinpay_account = FileCoinPay().get_account(utils.get_env("USDFC_TOKEN"), from_address)
+    filecoinpay_account = FileCoinPay().get_account(utils.get_env("USDC_TOKEN"), from_address)
 
     token_decimals = USDCToken().decimals()
     token_name = USDCToken().name()
@@ -64,7 +65,7 @@ def __deposit_for_all_deals(deals: list[PoRepMarketDealProposal], months: int, f
 
         click.echo()
         signed_msg = client_utils.sign_filecoinpay_permit(deposit_amount, permit_deadline, from_private_key)
-        tx_hash = FileCoinPay().deposit_with_permit(utils.get_env("USDFC_TOKEN"),
+        tx_hash = FileCoinPay().deposit_with_permit(utils.get_env("USDC_TOKEN"),
                                                     from_address,
                                                     deposit_amount,
                                                     permit_deadline,

@@ -34,7 +34,7 @@ def get_permit_deadline() -> int:
     return int(time.time()) + 3600  # 1 hour
 
 
-# EIP-712 signing for Filecoin Pay permit msg
+# EIP-712 signing for FileCoinPay permit msg
 def sign_filecoinpay_permit(amount: int, permit_deadline: int, from_private_key: str) -> SignedMessage:
     token_name = USDCToken().name()
     from_address = w3.eth.account.from_key(from_private_key).address
@@ -45,7 +45,7 @@ def sign_filecoinpay_permit(amount: int, permit_deadline: int, from_private_key:
             "name": token_name,
             "version": "1",
             "chainId": commands_utils.get_chain_id(),
-            "verifyingContract": utils.get_env("USDFC_TOKEN")
+            "verifyingContract": utils.get_env("USDC_TOKEN")
         },
         message_types={
             "Permit": [
@@ -65,7 +65,7 @@ def sign_filecoinpay_permit(amount: int, permit_deadline: int, from_private_key:
         }, private_key=from_private_key)
 
     if not signed_msg.v or not signed_msg.r or not signed_msg.s or not signed_msg.signature:
-        raise Exception("Invalid EIP-712 signature generated for Filecoin Pay permit")
+        raise Exception("Invalid EIP-712 signature generated for FileCoinPay permit")
 
-    click.echo(f"EIP-712 message signed for Filecoin Pay permit: {utils.private_str_to_log_str(signed_msg.signature.hex())}")
+    click.echo(f"EIP-712 message signed for FileCoinPay permit: {utils.private_str_to_log_str(signed_msg.signature.hex())}")
     return signed_msg

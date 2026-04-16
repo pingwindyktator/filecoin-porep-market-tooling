@@ -56,7 +56,7 @@ class PoRepMarketDealState(enum.Enum):
 @utils.json_dataclass()
 class PoRepMarketDealTerms:
     deal_size_bytes: int
-    price_per_sector_per_month: int  # Monthly price per 32 GiB sector in USDFC smallest units (wei-equivalent)
+    price_per_sector_per_month: int  # Monthly price per 32 GiB sector in USDC smallest units (wei-equivalent)
     duration_days: int  # Must be divisible by 30
 
 

@@ -37,10 +37,7 @@ def _manage_proposed_deals(from_private_key: str, answer: str | None = None):
 # TODO LATER can --private-key be different from --address here?
 def manage_proposed_deals(action: str | None):
     """
-    \b
-    Interactively manage proposed deals.
-    Either accept/reject each proposed deal manually or based on provided ACTION argument.
-    All write operations requires confirmation before sending.
+    Interactively manage proposed deals. Either accept or reject each proposed deal manually or based on provided ACTION argument.
 
     ACTION - Action to perform on proposed deals.
     """

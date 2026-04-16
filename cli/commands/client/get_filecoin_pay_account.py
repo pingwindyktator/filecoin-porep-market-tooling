@@ -8,7 +8,7 @@ from cli.services.contracts.filecoin_pay import FileCoinPay
 
 
 @click.command()
-@click.option("--token-address", envvar="USDFC_TOKEN", show_envvar=True, required=True,
+@click.option("--token-address", envvar="USDC_TOKEN", show_envvar=True, required=True,
               help="ERC20 token address to ask for.")
 def get_filecoin_pay_account(token_address: Address):
     """

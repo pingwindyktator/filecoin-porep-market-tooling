@@ -42,7 +42,7 @@ class FileCoinPayOperatorApproval:
         )
 
 
-# TODO LATER make token default = USDFC_TOKEN here
+# TODO LATER make token default = USDC_TOKEN here
 class FileCoinPay(ContractService):
     def __init__(self, contract_address: Address | str | None = None):
         super().__init__(contract_address if contract_address else utils.get_env("FILECOIN_PAY"),

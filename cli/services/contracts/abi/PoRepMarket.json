@@ -177,6 +177,11 @@
             "internalType": "uint256"
           },
           {
+            "name": "endEpoch",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
             "name": "manifestLocation",
             "type": "string",
             "internalType": "string"
@@ -278,6 +283,11 @@
           },
           {
             "name": "railId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "endEpoch",
             "type": "uint256",
             "internalType": "uint256"
           },
@@ -388,6 +398,11 @@
           },
           {
             "name": "railId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "endEpoch",
             "type": "uint256",
             "internalType": "uint256"
           },

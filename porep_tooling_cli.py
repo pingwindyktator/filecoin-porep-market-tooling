@@ -17,7 +17,7 @@ ERROR_LOG_FILE = "logs/error.logs"
 def configure_logger():
     import logging
 
-    def logging_level_str_to_int(level_str: str | None) -> int:
+    def logging_level_str_to_int(level_str):
         DEFAULT = logging.DEBUG
 
         return {
@@ -64,8 +64,7 @@ if __name__ == "__main__":
         print("Python >= v3.10.0 required to run %s, you have %s" % (sys.argv[0], platform.python_version()), file=sys.stderr)
         sys.exit(1)
 
-    DEBUG = False
-
+    # noinspection PyUnreachableCode
     try:
         import dotenv
 

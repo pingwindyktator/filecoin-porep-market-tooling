@@ -3,7 +3,7 @@ import click
 DRY_RUN: bool = False
 
 
-@click.group(context_settings={"max_content_width": 180})
+@click.group(context_settings={"max_content_width": 160})
 @click.option("--dry-run", envvar="DRY_RUN", show_envvar=True, is_flag=True, default=False,
               help="Enable dry-run mode, which only simulates transactions.")
 def cli(dry_run: bool = False):

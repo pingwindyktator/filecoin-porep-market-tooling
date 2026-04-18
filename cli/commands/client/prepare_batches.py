@@ -8,18 +8,13 @@ from cli.services.contracts.client_contract import Client, DataCapTypes
 from cli.services.contracts.porep_market import PoRepMarketDealState, PoRepMarket
 
 EPOCHS_PER_DAY = 2880
-TERM_MAX_EPOCHS = 5 * 365 * EPOCHS_PER_DAY  # 5 years hard cap
-DATACAP_UNIT = 10 ** 18  # mirrors 1 ether in Solidity
-
+TERM_MAX_EPOCHS = 5 * 365 * EPOCHS_PER_DAY
 
 @click.command()
 @click.argument('deal_id', type=int)
 # @click.option('--private-key', required=True, envvar='PRIVATE_KEY', help='Client wallet private key')
 @click.option('--dry-run', is_flag=True, default=False, help='Print transfer params without broadcasting')
 def prepare_batches(deal_id: int, dry_run: bool):
-    """
-    Send DataCap transfers for each piece in a deal, batched in groups of 10.
-    """
     deal = PoRepMarket().get_deal_proposal(deal_id)
     if not deal:
         raise Exception(f"Deal id {deal_id} not found")
@@ -82,7 +77,7 @@ def build_transfer_params(piece_str: str, provider_id: int, term_min: int, term_
     piece_cid, piece_size, deal_completed = decompose_piece_str(piece_str)
     return DataCapTypes.TransferParams(
         to=provider_id,
-        amount=(_uint_to_bigint_bytes(piece_size * DATACAP_UNIT), False),
+        amount=(_uint_to_bigint_bytes(piece_size * 123), False),
         operator_data=build_operator_data(provider_id, piece_cid, piece_size, term_min, term_max, expiration),
     )
 

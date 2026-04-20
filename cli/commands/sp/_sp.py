@@ -11,10 +11,11 @@ SP_PRIVATE_KEY: str | None = None
 
 @click.group()
 @click.option("--address", help="SP address to use.  [default: address from private key]")
-@click.option("--private-key", envvar="SP_PRIVATE_KEY", show_envvar=True, help="SP private key to use.")
-@click.option("--info", is_flag=True, default=False, show_default=True,
-              help="Confirm current info before executing command.")
-def sp(address: str | None = None, private_key: str | None = None, info: bool = False):
+@click.option("--private-key", envvar="SP_PRIVATE_KEY", show_envvar=True, help="SP private key to use.", hidden=True)
+@click.option("--verbose", is_flag=True, default=False, show_default=True, help="Confirm current info before executing command.")
+@click.option("--info", "info_deprecated", is_flag=True, default=False, hidden=True, help="Deprecated alias for --verbose.")    
+
+def sp(address: str | None = None, private_key: str | None = None, verbose: bool = False, info_deprecated: bool = False):
     """
     Storage Provider commands for interacting with the PoRep Market.
     """
@@ -25,7 +26,8 @@ def sp(address: str | None = None, private_key: str | None = None, info: bool = 
     global SP_ADDRESS
     SP_ADDRESS = address
 
-    if info:
+    verbose = verbose or info_deprecated
+    if verbose:
         _info()
         utils.ask_user_confirm_or_fail("\n\nContinue?", default_answer=True)
         click.echo("\n\n")

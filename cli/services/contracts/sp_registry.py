@@ -36,9 +36,9 @@ class SPRegistryProviderInfo(SPRegistryProvider):
     blocked: bool
 
     @staticmethod
-    def from_web3(provider_id, data) -> "SPRegistryProviderInfo | None":
+    def from_web3(provider_id, data) -> "SPRegistryProviderInfo":
         if not Address(data[0]):
-            return None
+            raise Exception("Provider not found")
 
         # noinspection PyArgumentList
         return SPRegistryProviderInfo(
@@ -101,7 +101,7 @@ class SPRegistry(ContractService):
     # @notice Get full information about a provider
     # @param provider_id The provider actor ID
     # @return info The provider's registration info
-    def get_provider_info(self, provider_id: int) -> SPRegistryProviderInfo | None:
+    def get_provider_info(self, provider_id: int) -> SPRegistryProviderInfo:
         return SPRegistryProviderInfo.from_web3(provider_id, self.contract.functions.getProviderInfo(provider_id).call())
 
     # @notice Get all providers registered under an organization

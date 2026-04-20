@@ -1,6 +1,7 @@
 import click
 import humanfriendly
 import requests
+from eth_account.types import PrivateKeyType
 from web3.auto import w3
 
 from cli import utils
@@ -82,7 +83,7 @@ def _propose_deal_from_manifest(manifest_url: str,
                                 duration_months: int,
                                 latency_ms: int,
                                 indexing_pct: int,
-                                from_private_key: str):
+                                from_private_key: PrivateKeyType):
     #
     manifest = _validate_manifest_pieces(_fetch_manifest(manifest_url))
     pieces = manifest[0]["pieces"]

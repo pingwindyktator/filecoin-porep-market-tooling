@@ -1,5 +1,7 @@
 import os
 
+from eth_account.types import PrivateKeyType
+
 from cli import utils
 from cli.services.contracts.contract_service import ContractService, Address
 
@@ -13,7 +15,7 @@ class ValidatorFactory(ContractService):
     # @dev Uses BeaconProxy to create a new proxy instance, pointing to the Beacon for the logic contract.
     # @dev Reverts if an instance for the given dealId already exists.
     # @param dealId The dealId for which the proxy was created.
-    def create(self, deal_id: int, from_private_key: str) -> str:
+    def create(self, deal_id: int, from_private_key: PrivateKeyType) -> str:
         return self.sign_and_send_tx(self.contract.functions.create(deal_id), from_private_key)
 
     # @notice Gets the instance for a given deal

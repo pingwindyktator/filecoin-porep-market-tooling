@@ -5,6 +5,7 @@ import time
 import click
 import eth_abi
 from eth_account.datastructures import SignedTransaction
+from eth_account.types import PrivateKeyType
 from eth_typing import ABIElement
 from hexbytes import HexBytes
 from web3 import Web3
@@ -19,7 +20,8 @@ from cli._cli import is_dry_run
 class Address(str):
     ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
-    def __new__(cls, addr: str):
+    def __new__(cls, addr: str) -> "Address":
+        # noinspection PyTypeChecker
         return super().__new__(cls, str(Web3.to_checksum_address(addr)))
 
     def __eq__(self, other):
@@ -64,6 +66,13 @@ class Address(str):
             raise ValueError(f"Invalid response for FilecoinAddressToEthAddress: {response['result']}")
 
         return Address(response["result"])
+
+    @staticmethod
+    def from_private_key(private_key: PrivateKeyType) -> "Address":
+        try:
+            return Address(ContractService.get_w3().eth.account.from_key(private_key).address)
+        except Exception as e:
+            raise ValueError(f"Invalid private key: {str(e)}") from e
 
 
 class ContractService:
@@ -129,7 +138,7 @@ class ContractService:
         assert not dry_run
         return self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
 
-    def _sign_and_send_tx(self, transaction, tx_params: dict, from_private_key: str, dry_run: bool = False) -> str:
+    def _sign_and_send_tx(self, transaction, tx_params: dict, from_private_key: PrivateKeyType, dry_run: bool = False) -> str:
         # transaction.args is sensitive info, should never be logged
         # tx_params.data is sensitive info, should never be logged
 
@@ -158,7 +167,7 @@ class ContractService:
         self.logger.warning(f"Transaction succeeded: {tx_hash.to_0x_hex()}: {ContractService.tx_to_log_string(transaction, tx_params)}")
         return tx_hash.to_0x_hex()
 
-    def sign_and_send_tx(self, transaction, from_private_key: str) -> str:
+    def sign_and_send_tx(self, transaction, from_private_key: PrivateKeyType) -> str:
         # transaction.args is sensitive info, should never be logged
 
         from_address = self.w3.eth.account.from_key(from_private_key).address

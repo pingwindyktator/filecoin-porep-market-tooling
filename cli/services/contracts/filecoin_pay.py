@@ -1,5 +1,7 @@
 import os
 
+from eth_account.types import PrivateKeyType
+
 from cli import utils
 from cli.services.contracts.contract_service import ContractService, Address
 
@@ -76,7 +78,7 @@ class FileCoinPay(ContractService):
                                                  rate_allowance: int,
                                                  lockup_allowance: int,
                                                  max_lockup_period: int,
-                                                 from_private_key: str) -> str:
+                                                 from_private_key: PrivateKeyType) -> str:
         return self.sign_and_send_tx(
             self.contract.functions.depositWithPermitAndApproveOperator(
                 token, to, amount, deadline, v, r, s, operator, rate_allowance, lockup_allowance, max_lockup_period
@@ -103,7 +105,7 @@ class FileCoinPay(ContractService):
                                                            operator: Address,
                                                            rate_allowance_increase: int,
                                                            lockup_allowance_increase: int,
-                                                           from_private_key: str) -> str:
+                                                           from_private_key: PrivateKeyType) -> str:
         return self.sign_and_send_tx(
             self.contract.functions.depositWithPermitAndIncreaseOperatorApproval(
                 token, to, amount, deadline, v, r, s, operator, rate_allowance_increase, lockup_allowance_increase
@@ -121,7 +123,7 @@ class FileCoinPay(ContractService):
                             amount: int,
                             deadline: int,
                             v: int, r: bytes, s: bytes,
-                            from_private_key: str) -> str:
+                            from_private_key: PrivateKeyType) -> str:
         return self.sign_and_send_tx(
             self.contract.functions.depositWithPermit(
                 token, to, amount, deadline, v, r, s

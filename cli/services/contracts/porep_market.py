@@ -1,6 +1,8 @@
 import enum
 import os
 
+from eth_account.types import PrivateKeyType
+
 from cli import utils
 from cli.services.contracts.contract_service import ContractService, Address
 from cli.services.contracts.sp_registry import SPRegistrySLIThresholds
@@ -123,7 +125,7 @@ class PoRepMarket(ContractService):
                          os.path.dirname(os.path.realpath(__file__)) + "/abi/PoRepMarket.json")
 
     # @notice Proposes a deal
-    def propose_deal(self, deal: PoRepMarketDealRequest, from_private_key: str) -> str:
+    def propose_deal(self, deal: PoRepMarketDealRequest, from_private_key: PrivateKeyType) -> str:
         requirements = deal.requirements
         terms = deal.terms
 
@@ -150,13 +152,13 @@ class PoRepMarket(ContractService):
 
     # @notice Accepts a deal
     # @param dealId The id of the deal proposal
-    def accept_deal(self, deal_id: int, from_private_key: str) -> str:
+    def accept_deal(self, deal_id: int, from_private_key: PrivateKeyType) -> str:
         return self.sign_and_send_tx(self.contract.functions.acceptDeal(deal_id), from_private_key)
 
     # @notice Completes a deal
     # @param dealId The id of the deal proposal
     # @param actualSizeBytes The actual size of the deal in bytes
-    def complete_deal(self, deal_id: int, actual_size_bytes: int, from_private_key: str) -> str:
+    def complete_deal(self, deal_id: int, actual_size_bytes: int, from_private_key: PrivateKeyType) -> str:
         return self.sign_and_send_tx(self.contract.functions.completeDeal(deal_id, actual_size_bytes), from_private_key)
 
     # @notice Terminate a deal
@@ -164,12 +166,12 @@ class PoRepMarket(ContractService):
     # @param dealId The id of the deal proposal
     # @param terminator The address that terminated the deal
     # @param endEpoch The Filecoin epoch at which the deal was terminated
-    def terminate_deal(self, deal_id: int, terminator: Address, end_epoch: int, from_private_key: str) -> str:
+    def terminate_deal(self, deal_id: int, terminator: Address, end_epoch: int, from_private_key: PrivateKeyType) -> str:
         return self.sign_and_send_tx(self.contract.functions.terminateDeal(deal_id, terminator, end_epoch), from_private_key)
 
     # @notice Rejects a deal
     # @param dealId The id of the deal proposal
-    def reject_deal(self, deal_id: int, from_private_key: str) -> str:
+    def reject_deal(self, deal_id: int, from_private_key: PrivateKeyType) -> str:
         return self.sign_and_send_tx(self.contract.functions.rejectDeal(deal_id), from_private_key)
 
     # @notice Gets all completed deals
@@ -181,7 +183,7 @@ class PoRepMarket(ContractService):
     # @dev Updates the rail id for a deal proposal
     # @param dealId The id of the deal proposal
     # @param railId The id of the rail
-    def update_rail_id(self, deal_id: int, rail_id: int, from_private_key: str) -> str:
+    def update_rail_id(self, deal_id: int, rail_id: int, from_private_key: PrivateKeyType) -> str:
         return self.sign_and_send_tx(self.contract.functions.updateRailId(deal_id, rail_id), from_private_key)
 
     # @notice Maximum deal duration in days. See PoRepTypes.MAX_DEAL_DURATION_DAYS.

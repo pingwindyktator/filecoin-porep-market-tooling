@@ -1,5 +1,7 @@
 import os
 
+from eth_account.types import PrivateKeyType
+
 from cli import utils
 from cli.services.contracts.contract_service import ContractService, Address
 
@@ -69,7 +71,7 @@ class SPRegistry(ContractService):
 
     # @notice Register a provider with full configuration in one call
     # @dev Admin convenience function for testnet onboarding. NOT in ISPRegistry interface.
-    def register_provider_for(self, provider: SPRegistryProvider, from_private_key: str) -> str:
+    def register_provider_for(self, provider: SPRegistryProvider, from_private_key: PrivateKeyType) -> str:
         capabilities = provider.capabilities
 
         return self.sign_and_send_tx(
@@ -121,7 +123,7 @@ class SPRegistry(ContractService):
                                  provider_id: int,
                                  min_deal_duration_days: int,
                                  max_deal_duration_days: int,
-                                 from_private_key: str) -> str:
+                                 from_private_key: PrivateKeyType) -> str:
         #
         return self.sign_and_send_tx(
             self.contract.functions.setDealDurationLimits(
@@ -133,7 +135,7 @@ class SPRegistry(ContractService):
     # @notice Update provider's available storage capacity
     # @param provider_id The provider to update
     # @param available_bytes New available capacity in bytes
-    def update_available_space(self, provider_id: int, available_bytes: int, from_private_key: str) -> str:
+    def update_available_space(self, provider_id: int, available_bytes: int, from_private_key: PrivateKeyType) -> str:
         return self.sign_and_send_tx(
             self.contract.functions.updateAvailableSpace(
                 provider_id,
@@ -143,7 +145,7 @@ class SPRegistry(ContractService):
     # @notice Set SLI capabilities for a provider
     # @param provider_id The provider to update
     # @param capabilities The SLI capabilities this provider guarantees
-    def set_capabilities(self, provider_id: int, capabilities: SPRegistrySLIThresholds, from_private_key: str) -> str:
+    def set_capabilities(self, provider_id: int, capabilities: SPRegistrySLIThresholds, from_private_key: PrivateKeyType) -> str:
         return self.sign_and_send_tx(
             self.contract.functions.setCapabilities(
                 provider_id,
@@ -153,7 +155,7 @@ class SPRegistry(ContractService):
     # @notice Set the monthly price per sector for a provider
     # @param provider_id The provider to update
     # @param price_per_sector_per_month The monthly ERC20 token price per 32 GiB sector in smallest units (0 to disable auto-approve)
-    def set_price(self, provider_id: int, price_per_sector_per_month: int, from_private_key: str) -> str:
+    def set_price(self, provider_id: int, price_per_sector_per_month: int, from_private_key: PrivateKeyType) -> str:
         return self.sign_and_send_tx(
             self.contract.functions.setPrice(
                 provider_id,
@@ -163,7 +165,7 @@ class SPRegistry(ContractService):
     # @notice Set the payment recipient address for a provider
     # @param provider_id The provider to update
     # @param payee_address The address that will receive payments for this provider
-    def set_payee(self, provider_id: int, payee_address: Address, from_private_key: str) -> str:
+    def set_payee(self, provider_id: int, payee_address: Address, from_private_key: PrivateKeyType) -> str:
         return self.sign_and_send_tx(
             self.contract.functions.setPayee(
                 provider_id,

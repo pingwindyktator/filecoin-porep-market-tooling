@@ -1,4 +1,5 @@
 import click
+from eth_account.types import PrivateKeyType
 from web3.auto import w3
 
 from cli import utils
@@ -46,7 +47,7 @@ def admin_address() -> Address:
 
 
 # lazy initialization
-def admin_private_key() -> str:
+def admin_private_key() -> PrivateKeyType:
     global ADMIN_PRIVATE_KEY
 
     if not ADMIN_PRIVATE_KEY:
@@ -55,7 +56,7 @@ def admin_private_key() -> str:
     commands_utils.validate_address_matches_private_key(admin_address(), ADMIN_PRIVATE_KEY)
 
     assert ADMIN_PRIVATE_KEY
-    return str(ADMIN_PRIVATE_KEY)
+    return PrivateKeyType(ADMIN_PRIVATE_KEY)
 
 
 def _info():

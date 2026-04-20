@@ -1,6 +1,7 @@
 import sys
 
 import click
+from eth_account.types import PrivateKeyType
 from web3.auto import w3
 
 from cli import utils
@@ -29,7 +30,7 @@ def init_accepted_deals():
 
 
 # TODO LATER print deal state at the end?
-def _init_accepted_deals(from_private_key: str):
+def _init_accepted_deals(from_private_key: PrivateKeyType):
     # wait for pending transactions
     from_address = w3.eth.account.from_key(from_private_key).address
     _ = ContractService.get_address_nonce(from_address)
@@ -52,7 +53,7 @@ def _init_accepted_deals(from_private_key: str):
     click.echo(f"\nRun {sys.argv[0]} client deposit-for-all-deals to make sure you have enough FileCoinPay funds deposited for all your accepted deals")
 
 
-def _deploy_and_set_validator(deal_id: int, from_private_key: str) -> str | None:
+def _deploy_and_set_validator(deal_id: int, from_private_key: PrivateKeyType) -> str | None:
     deal = PoRepMarket().get_deal_proposal(deal_id)
 
     if not deal:
@@ -75,7 +76,7 @@ def _deploy_and_set_validator(deal_id: int, from_private_key: str) -> str | None
     return tx_hash
 
 
-def _deposit_and_approve_operator(deal_id: int, from_private_key: str) -> str | None:
+def _deposit_and_approve_operator(deal_id: int, from_private_key: PrivateKeyType) -> str | None:
     deal = PoRepMarket().get_deal_proposal(deal_id)
 
     if not deal:
@@ -152,7 +153,7 @@ def _deposit_and_approve_operator(deal_id: int, from_private_key: str) -> str | 
     return tx_hash
 
 
-def _initialize_rail(deal_id: int, from_private_key: str) -> str | None:
+def _initialize_rail(deal_id: int, from_private_key: PrivateKeyType) -> str | None:
     deal = PoRepMarket().get_deal_proposal(deal_id)
 
     if not deal:

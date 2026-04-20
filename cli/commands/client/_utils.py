@@ -39,7 +39,7 @@ def get_permit_deadline() -> int:
 # EIP-712 signing for FileCoinPay permit msg
 def sign_filecoinpay_permit(amount: int, permit_deadline: int, from_private_key: PrivateKeyType) -> SignedMessage:
     token_name = USDCToken().name()
-    from_address = w3.eth.account.from_key(from_private_key).address
+    from_address = Address.from_private_key(from_private_key)
 
     # signed_msg.signature is sensitive info, should never be logged
     signed_msg = w3.eth.account.sign_typed_data(

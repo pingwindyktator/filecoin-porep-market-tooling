@@ -56,7 +56,7 @@ def client_private_key() -> PrivateKeyType:
     commands_utils.validate_address_matches_private_key(client_address(), CLIENT_PRIVATE_KEY)
 
     assert CLIENT_PRIVATE_KEY
-    return PrivateKeyType(CLIENT_PRIVATE_KEY)
+    return CLIENT_PRIVATE_KEY
 
 
 def _info():

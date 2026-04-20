@@ -1,11 +1,10 @@
 import click
 from eth_account.types import PrivateKeyType
-from web3.auto import w3
 
 from cli import utils
 from cli.commands.client import _utils as client_utils
 from cli.commands.client._client import client_private_key
-from cli.services.contracts.contract_service import ContractService
+from cli.services.contracts.contract_service import ContractService, Address
 from cli.services.contracts.filecoin_pay import FileCoinPay
 from cli.services.contracts.porep_market import PoRepMarketDealState, PoRepMarketDealProposal
 from cli.services.contracts.usdc_token import USDCToken
@@ -25,7 +24,7 @@ def deposit_for_all_deals(months: int):
 
 def _deposit_for_all_deals(months: int, from_private_key: PrivateKeyType):
     # wait for pending transactions
-    from_address = w3.eth.account.from_key(from_private_key).address
+    from_address = Address.from_private_key(from_private_key)
     _ = ContractService.get_address_nonce(from_address)
 
     accepted_deals = client_utils.get_client_deals(from_address, PoRepMarketDealState.ACCEPTED)
@@ -34,7 +33,7 @@ def _deposit_for_all_deals(months: int, from_private_key: PrivateKeyType):
 
 # deposits USDC funds to FileCoinPay account for X month of storing deals
 def __deposit_for_all_deals(deals: list[PoRepMarketDealProposal], months: int, from_private_key: PrivateKeyType) -> str | None:
-    from_address = w3.eth.account.from_key(from_private_key).address
+    from_address = Address.from_private_key(from_private_key)
     filecoinpay_account = FileCoinPay().get_account(utils.get_env("USDC_TOKEN"), from_address)
 
     token_decimals = USDCToken().decimals()

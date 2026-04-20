@@ -4,6 +4,7 @@ from web3.auto import w3
 from cli import utils
 from cli.commands.client import _utils as client_utils
 from cli.commands.client._client import client_private_key
+from cli.services.contracts.contract_service import ContractService
 from cli.services.contracts.filecoin_pay import FileCoinPay
 from cli.services.contracts.porep_market import PoRepMarketDealState, PoRepMarketDealProposal
 from cli.services.contracts.usdc_token import USDCToken
@@ -11,7 +12,7 @@ from cli.services.contracts.usdc_token import USDCToken
 
 # TODO LATER improve this
 @click.command()
-@click.option("--months", type=click.IntRange(min=0), default=1, show_default=True,
+@click.option("--months", type=click.IntRange(min=1), default=1, show_default=True,
               help="Number of months to calculate required deposit amount for.")
 def deposit_for_all_deals(months: int):
     """
@@ -22,9 +23,11 @@ def deposit_for_all_deals(months: int):
 
 
 def _deposit_for_all_deals(months: int, from_private_key: str):
+    # wait for pending transactions
     from_address = w3.eth.account.from_key(from_private_key).address
-    accepted_deals = client_utils.get_client_deals(from_address, PoRepMarketDealState.ACCEPTED)
+    _ = ContractService.get_address_nonce(from_address)
 
+    accepted_deals = client_utils.get_client_deals(from_address, PoRepMarketDealState.ACCEPTED)
     __deposit_for_all_deals(accepted_deals, months, from_private_key)
 
 
@@ -61,6 +64,8 @@ def __deposit_for_all_deals(deals: list[PoRepMarketDealProposal], months: int, f
                 f"  Current token balance: {token_balance_tokens} {token_name}\n"
                 f"  Current FileCoinPay account available funds: {filecoinpay_available_funds_tokens} {token_name}\n"
                 f"  Total required funds for {len(deals)} deals for {months} months: {total_required_amount_tokens} {token_name}"):
+            #
+            click.echo("Canceled!\n")
             return
 
         click.echo()

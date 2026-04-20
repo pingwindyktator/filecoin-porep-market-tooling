@@ -1,13 +1,7 @@
 import click
 
 from cli import utils
-from cli.commands import utils as commands_utils
-from cli.services.contracts.contract_service import Address
 from cli.services.contracts.porep_market import PoRepMarketDealState, PoRepMarketDealProposal, PoRepMarket
-
-
-def get_organization_deals(state: PoRepMarketDealState | None, organization_address: Address) -> list[PoRepMarketDealProposal]:
-    return commands_utils.get_all_deals(state, organization_address)
 
 
 def accept_deal(deal: PoRepMarketDealProposal, from_private_key: str) -> str | None:
@@ -16,6 +10,7 @@ def accept_deal(deal: PoRepMarketDealProposal, from_private_key: str) -> str | N
         return
 
     if not utils.ask_user_confirm(f"\nAccepting deal id {deal.deal_id}: {deal}"):
+        click.echo("Canceled!\n")
         return
 
     tx_hash = PoRepMarket().accept_deal(deal.deal_id, from_private_key)
@@ -29,6 +24,7 @@ def reject_deal(deal: PoRepMarketDealProposal, from_private_key: str) -> str | N
         return
 
     if not utils.ask_user_confirm(f"\nRejecting deal id {deal.deal_id}: {deal}"):
+        click.echo("Canceled!\n")
         return
 
     tx_hash = PoRepMarket().reject_deal(deal.deal_id, from_private_key)

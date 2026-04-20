@@ -1,5 +1,7 @@
 .venv
-.env
 .idea
 *.pyc
+
+.env
+.env.devnet
 logs/

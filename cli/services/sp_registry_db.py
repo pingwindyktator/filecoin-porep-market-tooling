@@ -40,9 +40,14 @@ class SPRegistryDBOrganization:
     @staticmethod
     def from_db(data) -> "SPRegistryDBOrganization":
         miner_ids = [utils.f0_str_id_to_int(miner_id) for miner_id in data[2]]
+        db_id = int(data[0])
 
+        if any(miner_id is None for miner_id in miner_ids):
+            raise ValueError(f"Invalid miner id in database for db_id {db_id}: {data[2]}")
+
+        # noinspection PyArgumentList
         return SPRegistryDBOrganization(
-            id=int(data[0]),
+            id=db_id,
             name=data[1],
             miner_ids=miner_ids,
             accepted_client_geographies=data[3],
@@ -102,9 +107,10 @@ class SPRegistryDB:
             params.append(_miner_id)
 
         with psycopg.connect(self.db_url) as conn:
+            # noinspection PyTypeChecker
             providers = [
                 SPRegistryDBOrganization.from_db(p)
-                for p in conn.execute(bytes(query, "utf-8"), params).fetchall()
+                for p in conn.execute(query, params).fetchall()
             ]
 
         return providers

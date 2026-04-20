@@ -7,18 +7,19 @@ from web3.auto import w3
 
 from cli import utils
 from cli.commands import utils as commands_utils
+from cli.services.contracts.contract_service import ContractService, Address
 from cli.services.contracts.porep_market import PoRepMarketDealProposal, PoRepMarketDealState, PoRepMarketDealRequest
 from cli.services.contracts.usdc_token import USDCToken
 
 
-def get_client_deals(client_address: str, state: PoRepMarketDealState | None = None) -> list[PoRepMarketDealProposal]:
-    all_deals = commands_utils.get_all_deals(state)
+def get_client_deals(client_address: Address, state: PoRepMarketDealState | None = None) -> list[PoRepMarketDealProposal]:
+    all_deals = commands_utils.get_all_deals(state=state)
     return [deal for deal in all_deals if deal.client_address == client_address]
 
 
 def calculate_deposit_amount_for_deal(deal: PoRepMarketDealRequest, deposit_for_months: int = 1) -> int:
     if deposit_for_months < 0:
-        raise Exception("Deposit for months must be greater than 0")
+        raise Exception("deposit_for_months must be >= 0")
 
     deal_size_sectors = commands_utils.bytes_to_sectors(deal.terms.deal_size_bytes)
     result = deal_size_sectors * deal.terms.price_per_sector_per_month * deposit_for_months
@@ -44,7 +45,7 @@ def sign_filecoinpay_permit(amount: int, permit_deadline: int, from_private_key:
         domain_data={
             "name": token_name,
             "version": "1",
-            "chainId": commands_utils.get_chain_id(),
+            "chainId": ContractService.get_chain_id(),
             "verifyingContract": utils.get_env("USDC_TOKEN")
         },
         message_types={

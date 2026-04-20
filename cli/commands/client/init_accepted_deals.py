@@ -6,6 +6,7 @@ from web3.auto import w3
 from cli import utils
 from cli.commands.client import _utils as client_utils
 from cli.commands.client._client import client_private_key
+from cli.services.contracts.contract_service import ContractService
 from cli.services.contracts.filecoin_pay import FileCoinPay
 from cli.services.contracts.filecoinpay_validator import FileCoinPayValidator
 from cli.services.contracts.porep_market import PoRepMarketDealState, PoRepMarketDealProposal, PoRepMarket
@@ -27,8 +28,12 @@ def init_accepted_deals():
     _init_accepted_deals(client_private_key())
 
 
+# TODO LATER print deal state at the end?
 def _init_accepted_deals(from_private_key: str):
+    # wait for pending transactions
     from_address = w3.eth.account.from_key(from_private_key).address
+    _ = ContractService.get_address_nonce(from_address)
+
     accepted_deals = client_utils.get_client_deals(from_address, PoRepMarketDealState.ACCEPTED)
     click.echo(f"Found {len(accepted_deals)} accepted deals for client_address {from_address}\n")
 
@@ -36,10 +41,13 @@ def _init_accepted_deals(from_private_key: str):
         click.echo(f"\nDeal id {deal.deal_id}: {utils.json_pretty(deal)}\n")
 
         _deploy_and_set_validator(deal.deal_id, from_private_key)
+        _ = ContractService.get_address_nonce(from_address)  # wait for pending transactions
+
         _deposit_and_approve_operator(deal.deal_id, from_private_key)
+        _ = ContractService.get_address_nonce(from_address)  # wait for pending transactions
+
         _initialize_rail(deal.deal_id, from_private_key)
 
-    # TODO LATER wait for tx after steps
     click.echo("\n\nAll done!")
     click.echo(f"\nRun {sys.argv[0]} client deposit-for-all-deals to make sure you have enough FileCoinPay funds deposited for all your accepted deals")
 
@@ -58,6 +66,7 @@ def _deploy_and_set_validator(deal_id: int, from_private_key: str) -> str | None
         return
 
     if not utils.ask_user_confirm(f"Deploy and set validator for deal id {deal.deal_id}?", default_answer=True):
+        click.echo("Canceled!\n")
         return
 
     tx_hash = ValidatorFactory().create(deal.deal_id, from_private_key)
@@ -104,9 +113,9 @@ def _deposit_and_approve_operator(deal_id: int, from_private_key: str) -> str | 
         raise Exception(f"Address {from_address} {token_name} balance {token_balance_tokens} is "
                         f"less than required deposit {deposit_amount_tokens} {token_name} for deal id {deal.deal_id}")
 
-    # TODO ASAP verify this:
     # These parameters control operator approval limits in the FileCoinPay contract, not EIP-2612 permits
     # Setting all three to MAX_UINT256 grants the operator unrestricted control over payment rates, fund lockup amounts, and lockup periods
+    # Once we set those params, we cannot increase them
     rate_allowance = utils.MAX_UINT256
     lockup_allowance = utils.MAX_UINT256
     max_lockup_period = utils.MAX_UINT256
@@ -114,13 +123,16 @@ def _deposit_and_approve_operator(deal_id: int, from_private_key: str) -> str | 
     # TODO LATER deposit 0 if enough filecoinpay funds? deposit only missing funds?
     # This code now deposit full deposit_amount for the deal only logging the filecoinpay_available_funds
     # This is intentional
-    if not utils.ask_user_confirm(f"Deposit {deposit_amount_tokens} {token_name} for deal id {deal.deal_id} from address {from_address} and approve operator\n"
-                                  f"  Current token balance: {token_balance_tokens} {token_name}\n"
-                                  f"  Current FileCoinPay account available funds: {filecoinpay_available_funds_tokens} {token_name}\n"
-                                  f"  Operator address: {deal.validator_address}\n"
-                                  f"  Rate allowance: {'MAX_UINT256' if rate_allowance == utils.MAX_UINT256 else rate_allowance}\n"
-                                  f"  Lockup allowance: {'MAX_UINT256' if lockup_allowance == utils.MAX_UINT256 else lockup_allowance}\n"
-                                  f"  Max lockup period: {'MAX_UINT256' if max_lockup_period == utils.MAX_UINT256 else max_lockup_period}"):
+    if not utils.ask_user_confirm(
+            f"\nDeposit {deposit_amount_tokens} {token_name} for deal id {deal.deal_id} from address {from_address} and approve operator\n"
+            f"  Current token balance: {token_balance_tokens} {token_name}\n"
+            f"  Current FileCoinPay account available funds: {filecoinpay_available_funds_tokens} {token_name}\n"
+            f"  Operator address: {deal.validator_address}\n"
+            f"  Rate allowance: {'MAX_UINT256' if rate_allowance == utils.MAX_UINT256 else rate_allowance}\n"
+            f"  Lockup allowance: {'MAX_UINT256' if lockup_allowance == utils.MAX_UINT256 else lockup_allowance}\n"
+            f"  Max lockup period: {'MAX_UINT256' if max_lockup_period == utils.MAX_UINT256 else max_lockup_period}"):
+        #
+        click.echo("Canceled!\n")
         return
 
     click.echo()
@@ -164,6 +176,7 @@ def _initialize_rail(deal_id: int, from_private_key: str) -> str | None:
         return
 
     if not utils.ask_user_confirm(f"Initialize FileCoinPay rail for deal id {deal.deal_id}?", default_answer=True):
+        click.echo("Canceled!\n")
         return
 
     tx_hash = FileCoinPayValidator(deal.validator_address).create_rail(utils.get_env("USDC_TOKEN"), from_private_key)

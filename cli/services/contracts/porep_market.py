@@ -16,7 +16,10 @@ class PoRepMarketDealState(enum.Enum):
     TERMINATED = 4
 
     @staticmethod
-    def from_string(s: str):
+    def from_string(s: str | None) -> "PoRepMarketDealState | None":
+        if not s:
+            return None
+
         s = s.strip().lower()
 
         if s == "proposed":
@@ -38,15 +41,6 @@ class PoRepMarketDealState(enum.Enum):
 
     def __str__(self):
         return self.name
-
-    def __eq__(self, other):
-        if isinstance(other, str):
-            return super().__eq__(PoRepMarketDealState.from_string(other))
-
-        return super().__eq__(other)
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
 
     def __repr__(self):
         return str(self)
@@ -92,9 +86,8 @@ class PoRepMarketDealProposal(PoRepMarketDealRequest):
         self.validator_address = Address(self.validator_address)
 
     @staticmethod
-    def from_web3(data, expected_deal_id: int | None = None) -> "PoRepMarketDealProposal":
+    def from_web3(data, expected_deal_id: int | None = None) -> "PoRepMarketDealProposal | None":
         if not Address(data[1]):
-            # noinspection PyTypeChecker
             return None
 
         if expected_deal_id is not None and expected_deal_id != data[0]:
@@ -144,7 +137,7 @@ class PoRepMarket(ContractService):
     # @param deal_id The id of the deal proposal
     # @return PoRepMarketDealProposal The deal proposal
     def get_deal_proposal(self, deal_id: int) -> PoRepMarketDealProposal | None:
-        return PoRepMarketDealProposal.from_web3(self.contract.functions.getDealProposal(deal_id).call())
+        return PoRepMarketDealProposal.from_web3(self.contract.functions.getDealProposal(deal_id).call(), expected_deal_id=deal_id)
 
     # @notice Gets deals for a specific organization by state
     # @param organization_address The address of the organization
@@ -199,3 +192,8 @@ class PoRepMarket(ContractService):
     # @dev 30 days * 24 hours/day * 60 minutes/hour * 2 epochs/minute = 86_400 epochs
     def get_epochs_in_month(self) -> int:
         return self.contract.functions.EPOCHS_IN_MONTH().call()
+
+    # @notice Gets all deals
+    # @return deals Array of all deal proposals
+    def get_all_deals(self) -> list[PoRepMarketDealProposal]:
+        return [PoRepMarketDealProposal.from_web3(deal) for deal in self.contract.functions.getDeals().call()]

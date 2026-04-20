@@ -5,6 +5,7 @@ import time
 import click
 import eth_abi
 from eth_account.datastructures import SignedTransaction
+from eth_typing import ABIElement
 from hexbytes import HexBytes
 from web3 import Web3
 from web3.exceptions import ContractCustomError
@@ -79,7 +80,7 @@ class ContractService:
         return self.__class__.__name__
 
     def __decode_contract_error_name(self, err: ContractCustomError) -> str:
-        def find_error_in_abi(selector: bytes) -> dict | None:
+        def find_error_in_abi(selector: bytes) -> ABIElement | None:
             for item in [i for i in self.contract.abi if i.get("type") == "error"]:
                 sig = item["name"] + "(" + ",".join(i["type"] for i in item["inputs"]) + ")"
 
@@ -88,7 +89,7 @@ class ContractService:
 
             return None
 
-        def format_error_args(abi_error: dict, arg_data: bytes) -> str:
+        def format_error_args(abi_error: ABIElement, arg_data: bytes) -> str:
             types = [i["type"] for i in abi_error["inputs"]]
             names = [i["name"] for i in abi_error["inputs"]]
             decoded = eth_abi.decode(types, arg_data)

@@ -28,6 +28,7 @@ def get_env(name, required=True, default=None):
 def string_to_bool(value: str | None) -> bool | None:
     if value is None:
         return None
+
     value = value.strip().lower()
 
     if value in ["true", "1", "yes", "y"]:

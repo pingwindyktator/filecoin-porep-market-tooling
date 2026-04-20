@@ -86,9 +86,9 @@ class PoRepMarketDealProposal(PoRepMarketDealRequest):
         self.validator_address = Address(self.validator_address)
 
     @staticmethod
-    def from_web3(data, expected_deal_id: int | None = None) -> "PoRepMarketDealProposal | None":
+    def from_web3(data, expected_deal_id: int | None = None) -> "PoRepMarketDealProposal":
         if not Address(data[1]):
-            return None
+            raise Exception("Deal not found")
 
         if expected_deal_id is not None and expected_deal_id != data[0]:
             raise Exception(f"Invalid deal proposal returned from contract. Expected deal_id {expected_deal_id}, got {data[0]}")
@@ -137,7 +137,7 @@ class PoRepMarket(ContractService):
     # @notice Gets a deal proposal
     # @param deal_id The id of the deal proposal
     # @return PoRepMarketDealProposal The deal proposal
-    def get_deal_proposal(self, deal_id: int) -> PoRepMarketDealProposal | None:
+    def get_deal_proposal(self, deal_id: int) -> PoRepMarketDealProposal:
         return PoRepMarketDealProposal.from_web3(self.contract.functions.getDealProposal(deal_id).call(), expected_deal_id=deal_id)
 
     # @notice Gets deals for a specific organization by state

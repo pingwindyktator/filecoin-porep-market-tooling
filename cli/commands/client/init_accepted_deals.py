@@ -59,7 +59,7 @@ def _deploy_and_set_validator(deal_id: int, from_private_key: PrivateKeyType) ->
         raise Exception(f"Deal id {deal_id} not found")
 
     if deal.state != PoRepMarketDealState.ACCEPTED:
-        raise Exception(f"Deal id {deal.deal_id} is not in accepted state")
+        raise Exception(f"Deal id {deal.deal_id} is not in ACCEPTED state")
 
     if __get_validator_address_for_deal(deal):
         click.echo(f"Validator already set for deal id {deal.deal_id}: {deal.validator_address}")
@@ -141,7 +141,7 @@ def _deposit_and_approve_operator(deal_id: int, from_private_key: PrivateKeyType
                                                                      from_address,
                                                                      deposit_amount,
                                                                      permit_deadline,
-                                                                     signed_msg.v, utils.int_to_bytes(signed_msg.r), utils.int_to_bytes(signed_msg.s),
+                                                                     signed_msg.v, utils.uint_to_bytes(signed_msg.r), utils.uint_to_bytes(signed_msg.s),
                                                                      deal.validator_address,
                                                                      rate_allowance,
                                                                      lockup_allowance,

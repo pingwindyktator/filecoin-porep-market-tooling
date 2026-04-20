@@ -138,9 +138,13 @@ def to_wei(amount: int | float, decimals: int) -> int:
     return int(result)
 
 
-def int_to_bytes(x: int, size: int = 32) -> bytes:
+def uint_to_bytes(x: int, size: int = 32) -> bytes:
+    if x == 0:
+        return b"\x00"
+
     if x < 0:
         raise ValueError("Cannot convert negative integer to bytes")
+
     return x.to_bytes(size, "big")
 
 

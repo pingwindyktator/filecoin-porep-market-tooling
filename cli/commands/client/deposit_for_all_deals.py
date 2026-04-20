@@ -74,7 +74,7 @@ def __deposit_for_all_deals(deals: list[PoRepMarketDealProposal], months: int, f
                                                     from_address,
                                                     deposit_amount,
                                                     permit_deadline,
-                                                    signed_msg.v, utils.int_to_bytes(signed_msg.r), utils.int_to_bytes(signed_msg.s),
+                                                    signed_msg.v, utils.uint_to_bytes(signed_msg.r), utils.uint_to_bytes(signed_msg.s),
                                                     from_private_key)
 
         click.echo(f"Deposited {deposit_amount_str} {token_name}: {tx_hash}")

@@ -6,7 +6,7 @@ from cli.services.contracts.contract_service import ContractService
 
 
 @click.command()
-@click.argument('deal_id', type=click.INT)
+@click.argument("deal_id", type=click.IntRange(min=0))
 # TODO LATER print deal state at the end?
 def accept_deal(deal_id: int):
     """

@@ -2,12 +2,11 @@ import sys
 
 import click
 from eth_account.types import PrivateKeyType
-from web3.auto import w3
 
 from cli import utils
 from cli.commands.client import _utils as client_utils
 from cli.commands.client._client import client_private_key
-from cli.services.contracts.contract_service import ContractService
+from cli.services.contracts.contract_service import ContractService, Address
 from cli.services.contracts.filecoin_pay import FileCoinPay
 from cli.services.contracts.filecoinpay_validator import FileCoinPayValidator
 from cli.services.contracts.porep_market import PoRepMarketDealState, PoRepMarketDealProposal, PoRepMarket
@@ -32,7 +31,7 @@ def init_accepted_deals():
 # TODO LATER print deal state at the end?
 def _init_accepted_deals(from_private_key: PrivateKeyType):
     # wait for pending transactions
-    from_address = w3.eth.account.from_key(from_private_key).address
+    from_address = Address.from_private_key(from_private_key)
     _ = ContractService.get_address_nonce(from_address)
 
     accepted_deals = client_utils.get_client_deals(from_address, PoRepMarketDealState.ACCEPTED)
@@ -86,7 +85,7 @@ def _deposit_and_approve_operator(deal_id: int, from_private_key: PrivateKeyType
         click.echo(f"Validator not found for deal id {deal.deal_id}, cannot deposit and approve operator")
         return
 
-    from_address = w3.eth.account.from_key(from_private_key).address
+    from_address = Address.from_private_key(from_private_key)
     operator_approval = FileCoinPay().get_operator_approval(utils.get_env("USDC_TOKEN"),
                                                             from_address,
                                                             deal.validator_address)
@@ -163,7 +162,7 @@ def _initialize_rail(deal_id: int, from_private_key: PrivateKeyType) -> str | No
         click.echo(f"Validator not found for deal id {deal.deal_id}, cannot initialize rail")
         return
 
-    from_address = w3.eth.account.from_key(from_private_key).address
+    from_address = Address.from_private_key(from_private_key)
     operator_approval = FileCoinPay().get_operator_approval(utils.get_env("USDC_TOKEN"),
                                                             from_address,
                                                             deal.validator_address)

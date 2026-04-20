@@ -170,7 +170,7 @@ class ContractService:
     def sign_and_send_tx(self, transaction, from_private_key: PrivateKeyType) -> str:
         # transaction.args is sensitive info, should never be logged
 
-        from_address = self.w3.eth.account.from_key(from_private_key).address
+        from_address = Address.from_private_key(from_private_key)
         nonce = ContractService.get_address_nonce(from_address, self.w3)
         tx_params = None
 

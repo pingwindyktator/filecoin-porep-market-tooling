@@ -1,11 +1,10 @@
 import click
 from eth_account.types import PrivateKeyType
-from web3.auto import w3
 
 from cli import utils
 from cli.commands.admin import _utils as admin_utils
 from cli.commands.admin._admin import admin_private_key
-from cli.services.contracts.contract_service import ContractService
+from cli.services.contracts.contract_service import ContractService, Address
 from cli.services.contracts.sp_registry import SPRegistry, SPRegistryProvider, SPRegistryProviderInfo
 
 
@@ -99,7 +98,7 @@ def __update_provider_params(provider: SPRegistryProvider | SPRegistryProviderIn
 # TODO LATER print register provider at the end?
 def _register_sps(providers: list[SPRegistryProvider], from_private_key: PrivateKeyType):
     # wait for pending transactions
-    _ = ContractService.get_address_nonce(w3.eth.account.from_key(from_private_key).address)
+    _ = ContractService.get_address_nonce(Address.from_private_key(from_private_key))
 
     for provider in providers:
         is_registered = SPRegistry().is_provider_registered(provider.provider_id)

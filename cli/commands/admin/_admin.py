@@ -56,7 +56,7 @@ def admin_private_key() -> PrivateKeyType:
     commands_utils.validate_address_matches_private_key(admin_address(), ADMIN_PRIVATE_KEY)
 
     assert ADMIN_PRIVATE_KEY
-    return PrivateKeyType(ADMIN_PRIVATE_KEY)
+    return ADMIN_PRIVATE_KEY
 
 
 def _info():

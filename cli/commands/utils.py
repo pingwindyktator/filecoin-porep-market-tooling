@@ -1,6 +1,5 @@
 import click
 from eth_account.types import PrivateKeyType
-from web3.auto import w3
 
 from cli import utils
 from cli._cli import is_dry_run
@@ -55,11 +54,11 @@ def print_info():
     click.echo(f"DEBUG={utils.get_env('DEBUG', default='False').capitalize()}")
 
 
-def validate_address_matches_private_key(address: Address, private_key: str | PrivateKeyType | None):
+def validate_address_matches_private_key(address: Address, private_key: PrivateKeyType | None):
     if not private_key:
         raise Exception("Private key is not set")
 
-    derived_address = w3.eth.account.from_key(private_key).address
+    derived_address = Address.from_private_key(private_key)
 
     if derived_address != address:
         raise Exception(f"Address {address} does not match private key {utils.private_str_to_log_str(private_key)} (expected: {derived_address})")

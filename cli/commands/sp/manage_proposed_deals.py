@@ -1,18 +1,17 @@
 import click
 from eth_account.types import PrivateKeyType
-from web3.auto import w3
 
 from cli import utils
 from cli.commands import utils as commands_utils
 from cli.commands.sp import _utils as sp_utils
 from cli.commands.sp._sp import sp_private_key
-from cli.services.contracts.contract_service import ContractService
+from cli.services.contracts.contract_service import ContractService, Address
 
 
 # TODO LATER print deals states at the end?
 def _manage_proposed_deals(from_private_key: PrivateKeyType, answer: str | None = None):
     # wait for pending transactions
-    from_address = w3.eth.account.from_key(from_private_key).address
+    from_address = Address.from_private_key(from_private_key)
     _ = ContractService.get_address_nonce(from_address)
 
     deals = commands_utils.get_all_deals(sp_utils.PoRepMarketDealState.PROPOSED, from_address)

@@ -1,4 +1,5 @@
 import click
+from eth_account.types import PrivateKeyType
 from web3.auto import w3
 
 from cli import utils
@@ -22,7 +23,7 @@ def deposit_for_all_deals(months: int):
     _deposit_for_all_deals(months, client_private_key())
 
 
-def _deposit_for_all_deals(months: int, from_private_key: str):
+def _deposit_for_all_deals(months: int, from_private_key: PrivateKeyType):
     # wait for pending transactions
     from_address = w3.eth.account.from_key(from_private_key).address
     _ = ContractService.get_address_nonce(from_address)
@@ -32,7 +33,7 @@ def _deposit_for_all_deals(months: int, from_private_key: str):
 
 
 # deposits USDC funds to FileCoinPay account for X month of storing deals
-def __deposit_for_all_deals(deals: list[PoRepMarketDealProposal], months: int, from_private_key: str) -> str | None:
+def __deposit_for_all_deals(deals: list[PoRepMarketDealProposal], months: int, from_private_key: PrivateKeyType) -> str | None:
     from_address = w3.eth.account.from_key(from_private_key).address
     filecoinpay_account = FileCoinPay().get_account(utils.get_env("USDC_TOKEN"), from_address)
 

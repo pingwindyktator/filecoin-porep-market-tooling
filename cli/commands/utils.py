@@ -1,4 +1,5 @@
 import click
+from eth_account.types import PrivateKeyType
 from web3.auto import w3
 
 from cli import utils
@@ -54,7 +55,7 @@ def print_info():
     click.echo(f"DEBUG={utils.get_env('DEBUG', default='False').capitalize()}")
 
 
-def validate_address_matches_private_key(address: Address, private_key: str | None):
+def validate_address_matches_private_key(address: Address, private_key: str | PrivateKeyType | None):
     if not private_key:
         raise Exception("Private key is not set")
 

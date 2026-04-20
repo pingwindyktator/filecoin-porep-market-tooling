@@ -1,4 +1,5 @@
 import click
+from eth_account.types import PrivateKeyType
 from web3.auto import w3
 
 from cli import utils
@@ -11,7 +12,7 @@ from cli.services.contracts.sp_registry import SPRegistry, SPRegistryProvider, S
 def __update_provider_params(provider: SPRegistryProvider | SPRegistryProviderInfo,
                              registered_info: SPRegistryProvider,
                              different_parameters: dict,
-                             from_private_key: str):
+                             from_private_key: PrivateKeyType):
     #
     if provider.organization_address != registered_info.organization_address:
         raise Exception(f"Organization address cannot be updated for provider {utils.int_id_to_f0_str(provider.provider_id)}")
@@ -96,7 +97,7 @@ def __update_provider_params(provider: SPRegistryProvider | SPRegistryProviderIn
 
 
 # TODO LATER print register provider at the end?
-def _register_sps(providers: list[SPRegistryProvider], from_private_key: str):
+def _register_sps(providers: list[SPRegistryProvider], from_private_key: PrivateKeyType):
     # wait for pending transactions
     _ = ContractService.get_address_nonce(w3.eth.account.from_key(from_private_key).address)
 

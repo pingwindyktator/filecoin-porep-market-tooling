@@ -1,4 +1,5 @@
 import click
+from eth_account.types import PrivateKeyType
 from web3.auto import w3
 
 from cli import utils
@@ -9,7 +10,7 @@ from cli.services.contracts.contract_service import ContractService
 
 
 # TODO LATER print deals states at the end?
-def _manage_proposed_deals(from_private_key: str, answer: str | None = None):
+def _manage_proposed_deals(from_private_key: PrivateKeyType, answer: str | None = None):
     # wait for pending transactions
     from_address = w3.eth.account.from_key(from_private_key).address
     _ = ContractService.get_address_nonce(from_address)

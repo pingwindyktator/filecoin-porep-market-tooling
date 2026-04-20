@@ -4,6 +4,7 @@ import json
 import os
 
 from dotenv import load_dotenv
+from eth_account.types import PrivateKeyType
 
 load_dotenv(dotenv_path=None)
 
@@ -147,23 +148,24 @@ def int_from_bytes(xbytes: bytes) -> int:
     return int.from_bytes(xbytes, "big")
 
 
-def private_str_to_log_str(private_str: str | None) -> str:
+def private_str_to_log_str(private_str: str | PrivateKeyType | None) -> str:
     if not private_str:
         return ""
 
-    hex_padding = 2 if private_str.startswith("0x") else 0
+    _private_str = str(private_str)
+    hex_padding = 2 if _private_str.startswith("0x") else 0
 
-    if len(private_str) > 65:
-        return f"{private_str[:4 + hex_padding]}...{private_str[-4:]}"
+    if len(_private_str) > 65:
+        return f"{_private_str[:4 + hex_padding]}...{_private_str[-4:]}"
 
-    if len(private_str) > 40:
-        return f"{private_str[:2 + hex_padding]}...{private_str[-2:]}"
+    if len(_private_str) > 40:
+        return f"{_private_str[:2 + hex_padding]}...{_private_str[-2:]}"
 
-    if len(private_str) > 20:
-        return f"{private_str[:1 + hex_padding]}...{private_str[-1:]}"
+    if len(_private_str) > 20:
+        return f"{_private_str[:1 + hex_padding]}...{_private_str[-1:]}"
 
-    if len(private_str) > 5:
-        return "*" * len(private_str)
+    if len(_private_str) > 5:
+        return "*" * len(_private_str)
 
     return "*" * 5
 

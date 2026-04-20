@@ -1,5 +1,7 @@
 import os
 
+from eth_account.types import PrivateKeyType
+
 from cli.services.contracts.contract_service import ContractService, Address
 
 
@@ -12,5 +14,5 @@ class FileCoinPayValidator(ContractService):
     # @dev Only callable by the client
     # @dev Sets railID in contract state and updates the PoRepMarket with the created rail ID
     # @param token The ERC20 token to use for the payment rail
-    def create_rail(self, token_address: Address | str, from_private_key: str) -> str:
+    def create_rail(self, token_address: Address | str, from_private_key: PrivateKeyType) -> str:
         return self.sign_and_send_tx(self.contract.functions.createRail(token_address), from_private_key)

@@ -1,10 +1,11 @@
 import click
+from eth_account.types import PrivateKeyType
 
 from cli import utils
 from cli.services.contracts.porep_market import PoRepMarketDealState, PoRepMarketDealProposal, PoRepMarket
 
 
-def accept_deal(deal: PoRepMarketDealProposal, from_private_key: str) -> str | None:
+def accept_deal(deal: PoRepMarketDealProposal, from_private_key: PrivateKeyType) -> str | None:
     if deal.state != PoRepMarketDealState.PROPOSED:
         click.echo(f"Deal id {deal.deal_id} is not in Proposed state, current state: {deal.state}")
         return
@@ -18,7 +19,7 @@ def accept_deal(deal: PoRepMarketDealProposal, from_private_key: str) -> str | N
     return tx_hash
 
 
-def reject_deal(deal: PoRepMarketDealProposal, from_private_key: str) -> str | None:
+def reject_deal(deal: PoRepMarketDealProposal, from_private_key: PrivateKeyType) -> str | None:
     if deal.state != PoRepMarketDealState.PROPOSED:
         click.echo(f"Deal id {deal.deal_id} is not in Proposed state, current state: {deal.state}")
         return
@@ -32,9 +33,9 @@ def reject_deal(deal: PoRepMarketDealProposal, from_private_key: str) -> str | N
     return tx_hash
 
 
-def accept_deal_id(deal_id: int, from_private_key: str) -> str | None:
+def accept_deal_id(deal_id: int, from_private_key: PrivateKeyType) -> str | None:
     return accept_deal(PoRepMarket().get_deal_proposal(deal_id), from_private_key)
 
 
-def reject_deal_id(deal_id: int, from_private_key: str) -> str | None:
+def reject_deal_id(deal_id: int, from_private_key: PrivateKeyType) -> str | None:
     return reject_deal(PoRepMarket().get_deal_proposal(deal_id), from_private_key)

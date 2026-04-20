@@ -3,6 +3,7 @@ from math import ceil
 
 import click
 from eth_account.datastructures import SignedMessage
+from eth_account.types import PrivateKeyType
 from web3.auto import w3
 
 from cli import utils
@@ -36,7 +37,7 @@ def get_permit_deadline() -> int:
 
 
 # EIP-712 signing for FileCoinPay permit msg
-def sign_filecoinpay_permit(amount: int, permit_deadline: int, from_private_key: str) -> SignedMessage:
+def sign_filecoinpay_permit(amount: int, permit_deadline: int, from_private_key: PrivateKeyType) -> SignedMessage:
     token_name = USDCToken().name()
     from_address = w3.eth.account.from_key(from_private_key).address
 

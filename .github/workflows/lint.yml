@@ -1,4 +1,4 @@
-name: Run code linters
+name: Code linters
 
 on: [ push ]
 

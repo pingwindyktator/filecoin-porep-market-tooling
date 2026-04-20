@@ -10,14 +10,18 @@ ADMIN_PRIVATE_KEY: str | None = None
 
 
 @click.group()
-@click.option("--address", help="Admin address to use.  [default: address from private key]")
-@click.option("--private-key", envvar="ADMIN_PRIVATE_KEY", show_envvar=True, help="Admin private key to use.")
-@click.option("--info", is_flag=True, default=False, show_default=True,
-              help="Confirm current info before executing command.")
+@click.option("--address", help="Admin address to use.  [default: address from the private key]")
+@click.option("--private-key", envvar="ADMIN_PRIVATE_KEY", show_envvar=True, hidden=True)
+@click.option("--info", is_flag=True, default=False, show_default=True, help="Confirm current account info before executing command.")
 def admin(address: str | None = None, private_key: str | None = None, info: bool = False):
     """
     Admin commands for managing the PoRep Market.
     """
+
+    if private_key:
+        click.echo("Be aware that when using the [--private-key] option, the private key may be visible in the command history or process list.\n"
+                   "This is a default system behavior and is not specific to this app.\n"
+                   "Refer to README to learn more.\n")
 
     global ADMIN_PRIVATE_KEY
     ADMIN_PRIVATE_KEY = private_key
@@ -47,6 +51,11 @@ def admin_address() -> Address:
 
 # lazy initialization
 def admin_private_key() -> str:
+    global ADMIN_PRIVATE_KEY
+
+    if not ADMIN_PRIVATE_KEY:
+        ADMIN_PRIVATE_KEY = click.prompt("Admin private key", hide_input=True)
+
     commands_utils.validate_address_matches_private_key(admin_address(), ADMIN_PRIVATE_KEY)
 
     assert ADMIN_PRIVATE_KEY
@@ -54,7 +63,7 @@ def admin_private_key() -> str:
 
 
 def _info():
-    click.echo(f"Admin address: {ADMIN_ADDRESS}")
+    click.echo(f"Admin address: {ADMIN_ADDRESS if ADMIN_ADDRESS else ''}")
     click.echo(f"Admin private key: {utils.private_str_to_log_str(ADMIN_PRIVATE_KEY)}")
     click.echo()
     commands_utils.print_info()

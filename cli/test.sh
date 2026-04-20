@@ -81,13 +81,6 @@ set +a
 
   ! (python3 "${CLI_PATH}" admin --address "0x999999cf1046e68e36E1aA2E0E07105eDDD1f08E" --private-key "75d5bb290fb82d5b86a0a73b30e8e6dfb74d694f565a13f163d87d4370067729" info --test-keys >/dev/null 2>&1) &&
 
-  # fail when no keys provided
-  ! (ADMIN_PRIVATE_KEY="" \
-    python3 "${CLI_PATH}" admin --address "0x999999cf1046e68e36E1aA2E0E07105eDDD1f08E" info --test-keys >/dev/null 2>&1) &&
-
-  ! (ADMIN_PRIVATE_KEY="" \
-    python3 "${CLI_PATH}" admin info --test-keys >/dev/null 2>&1) &&
-
   # dont fail when no keys provided for get commands
   ADMIN_PRIVATE_KEY="" \
     python3 "${CLI_PATH}" admin --address "0x999999cf1046e68e36E1aA2E0E07105eDDD1f08E" get-deals >/dev/null &&

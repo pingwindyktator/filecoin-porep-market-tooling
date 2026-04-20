@@ -61,7 +61,7 @@ def ask_user_confirm_or_fail(prompt: str, default_answer=False):
         raise Exception("Operation cancelled by user")
 
 
-# TODO LATER ask_user_ok_or_fail?
+# TODO LATER use click.confirm
 # equivalent to "press enter to continue"
 def ask_user_ok(prompt: str):
     _ = ask_user_string(f"{prompt} (OK)", default_answer="")

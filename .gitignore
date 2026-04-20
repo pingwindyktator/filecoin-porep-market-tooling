@@ -5,3 +5,5 @@
 .env
 .env.devnet
 logs/
+
+mypy.ini

@@ -10,14 +10,18 @@ CLIENT_PRIVATE_KEY: str | None = None
 
 
 @click.group()
-@click.option("--address", help="Client address to use.  [default: address from private key]")
-@click.option("--private-key", envvar="CLIENT_PRIVATE_KEY", show_envvar=True, help="Client private key to use.")
-@click.option("--info", is_flag=True, default=False, show_default=True,
-              help="Confirm current info before executing command.")
+@click.option("--address", help="Client address to use.  [default: address from the private key]")
+@click.option("--private-key", envvar="CLIENT_PRIVATE_KEY", show_envvar=True, hidden=True)
+@click.option("--info", is_flag=True, default=False, show_default=True, help="Confirm current account info before executing command.")
 def client(address: str | None = None, private_key: str | None = None, info: bool = False):
     """
     Client commands for interacting with the PoRep Market.
     """
+
+    if private_key:
+        click.echo("Be aware that when using the [--private-key] option, the private key may be visible in the command history or process list.\n"
+                   "This is a default system behavior and is not specific to this app.\n"
+                   "Refer to README to learn more.\n")
 
     global CLIENT_PRIVATE_KEY
     CLIENT_PRIVATE_KEY = private_key
@@ -47,6 +51,11 @@ def client_address() -> Address:
 
 # lazy initialization
 def client_private_key() -> str:
+    global CLIENT_PRIVATE_KEY
+
+    if not CLIENT_PRIVATE_KEY:
+        CLIENT_PRIVATE_KEY = click.prompt("Client private key", hide_input=True)
+
     commands_utils.validate_address_matches_private_key(client_address(), CLIENT_PRIVATE_KEY)
 
     assert CLIENT_PRIVATE_KEY
@@ -54,7 +63,7 @@ def client_private_key() -> str:
 
 
 def _info():
-    click.echo(f"Client address: {CLIENT_ADDRESS}")
+    click.echo(f"Client address: {CLIENT_ADDRESS if CLIENT_ADDRESS else ''}")
     click.echo(f"Client private key: {utils.private_str_to_log_str(CLIENT_PRIVATE_KEY)}")
     click.echo()
     commands_utils.print_info()

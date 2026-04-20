@@ -7,7 +7,7 @@ from cli.services.contracts.porep_market import PoRepMarketDealState, PoRepMarke
 
 def accept_deal(deal: PoRepMarketDealProposal, from_private_key: PrivateKeyType) -> str | None:
     if deal.state != PoRepMarketDealState.PROPOSED:
-        click.echo(f"Deal id {deal.deal_id} is not in Proposed state, current state: {deal.state}")
+        click.echo(f"Deal id {deal.deal_id} is not in PROPOSED state, current state: {deal.state}")
         return
 
     if not utils.ask_user_confirm(f"\nAccepting deal id {deal.deal_id}: {deal}"):
@@ -21,7 +21,7 @@ def accept_deal(deal: PoRepMarketDealProposal, from_private_key: PrivateKeyType)
 
 def reject_deal(deal: PoRepMarketDealProposal, from_private_key: PrivateKeyType) -> str | None:
     if deal.state != PoRepMarketDealState.PROPOSED:
-        click.echo(f"Deal id {deal.deal_id} is not in Proposed state, current state: {deal.state}")
+        click.echo(f"Deal id {deal.deal_id} is not in PROPOSED state, current state: {deal.state}")
         return
 
     if not utils.ask_user_confirm(f"\nRejecting deal id {deal.deal_id}: {deal}"):

@@ -242,6 +242,10 @@ class ContractService:
         return ContractService.get_w3().eth.chain_id
 
     @staticmethod
+    def get_block_number() -> int:
+        return ContractService.get_w3().eth.block_number
+
+    @staticmethod
     def get_address_nonce(from_address: Address,
                           w3: Web3 | None = None,
                           block_identifier: str = "pending") -> int:

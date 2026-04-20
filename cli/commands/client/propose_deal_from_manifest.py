@@ -1,6 +1,5 @@
 import click
 import humanfriendly
-import requests
 from eth_account.types import PrivateKeyType
 
 from cli import utils
@@ -11,47 +10,6 @@ from cli.services.contracts.contract_service import ContractService, Address
 from cli.services.contracts.porep_market import PoRepMarketDealRequest, PoRepMarketDealTerms, PoRepMarket, PoRepMarketDealState
 from cli.services.contracts.sp_registry import SPRegistrySLIThresholds
 from cli.services.contracts.usdc_token import USDCToken
-
-
-def _fetch_manifest(manifest_url: str) -> list[dict]:
-    click.echo("Fetching manifest...")
-
-    try:
-        # download manifest
-        manifest = requests.get(manifest_url, timeout=30).json()
-        click.echo(f"Manifest downloaded from {manifest_url}")
-
-        # show manifest
-        if utils.ask_user_confirm("Show manifest?", default_answer=False):
-            _manifest = utils.json_pretty(manifest)
-            click.echo_via_pager("\n".join([f"{i + 1}. {line}" for i, line in enumerate(_manifest.splitlines())]))
-
-        click.echo()
-
-        # validate manifest format
-        if not (
-                manifest and
-                isinstance(manifest, list) and
-                len(manifest) == 1 and
-
-                manifest[0] and
-                isinstance(manifest[0], dict) and
-                "pieces" in manifest[0] and
-
-                manifest[0]["pieces"] and
-                isinstance(manifest[0]["pieces"], list) and
-
-                all(isinstance(piece, dict) and
-                    "pieceType" in piece and
-                    "pieceSize" in piece and
-                    "preparationId" in piece for piece in
-                    manifest[0]["pieces"])
-        ):
-            raise Exception("Invalid manifest format")
-
-        return manifest
-    except Exception as e:
-        raise Exception(f"Error fetching manifest: {e}") from e
 
 
 def _validate_manifest_pieces(manifest: list[dict]) -> list[dict]:
@@ -84,7 +42,7 @@ def _propose_deal_from_manifest(manifest_url: str,
                                 indexing_pct: int,
                                 from_private_key: PrivateKeyType):
     #
-    manifest = _validate_manifest_pieces(_fetch_manifest(manifest_url))
+    manifest = _validate_manifest_pieces(client_utils.fetch_manifest(manifest_url))
     pieces = manifest[0]["pieces"]
     pieces_size_bytes = sum(piece["pieceSize"] for piece in pieces)
 

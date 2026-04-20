@@ -11,7 +11,7 @@ SP_PRIVATE_KEY: str | None = None
 
 
 @click.group()
-@click.option("--address", help="SP address to use.  [default: address from the private key]")
+@click.option("--address", help="SP address to use.  [default: derived from the provided private key]")
 @click.option("--private-key", envvar="SP_PRIVATE_KEY", show_envvar=True, hidden=True)
 @click.option("--confirm-info", is_flag=True, default=False, show_default=True,
               help="Confirm current account info before executing command.  [default: false]")

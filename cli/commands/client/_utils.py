@@ -2,6 +2,7 @@ import time
 from math import ceil
 
 import click
+import requests
 from eth_account.datastructures import SignedMessage
 from eth_account.types import PrivateKeyType
 from web3.auto import w3
@@ -71,3 +72,45 @@ def sign_filecoinpay_permit(amount: int, permit_deadline: int, from_private_key:
 
     click.echo(f"EIP-712 message signed for FileCoinPay permit: {utils.private_str_to_log_str(signed_msg.signature.hex())}")
     return signed_msg
+
+
+def fetch_manifest(manifest_url: str) -> list[dict]:
+    click.echo(f"Fetching manifest from {manifest_url}")
+
+    try:
+        # download manifest
+        manifest = requests.get(manifest_url, timeout=30).json()
+        click.echo("Manifest downloaded")
+
+        # show manifest
+        if utils.ask_user_confirm("Show manifest?", default_answer=False):
+            _manifest = utils.json_pretty(manifest)
+            click.echo_via_pager("\n".join([f"{i + 1}. {line}" for i, line in enumerate(_manifest.splitlines())]))
+
+        click.echo()
+
+        # validate manifest format
+        if not (
+                manifest and
+                isinstance(manifest, list) and
+                len(manifest) == 1 and
+
+                manifest[0] and
+                isinstance(manifest[0], dict) and
+                "pieces" in manifest[0] and
+
+                manifest[0]["pieces"] and
+                isinstance(manifest[0]["pieces"], list) and
+                len(manifest[0]["pieces"]) > 0 and
+
+                all(isinstance(piece, dict) and
+                    "pieceType" in piece and
+                    "pieceSize" in piece and
+                    "preparationId" in piece for piece in
+                    manifest[0]["pieces"])
+        ):
+            raise Exception("Invalid manifest format")
+
+        return manifest
+    except Exception as e:
+        raise Exception(f"Error fetching manifest: {e}") from e

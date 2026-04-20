@@ -5,6 +5,7 @@ import time
 import click
 import eth_abi
 from eth_account.datastructures import SignedTransaction
+from hexbytes import HexBytes
 from web3 import Web3
 from web3.exceptions import ContractCustomError
 from web3.types import RPCEndpoint
@@ -13,7 +14,7 @@ from cli import utils
 from cli._cli import is_dry_run
 
 
-# TODO LATER use inbuilt eth_typing / web3 Address type?
+# TODO LATER use web3.types ?
 class Address(str):
     ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
@@ -123,34 +124,36 @@ class ContractService:
         except Exception:
             return f"DecodingError name={abi_error['name']} hex={hex_data} err={str(err)}"
 
-    def __send_tx(self, signed_tx: SignedTransaction, dry_run: bool) -> str:
-        if dry_run:
-            return "0x" + "00" * 32
-
-        return self.w3.eth.send_raw_transaction(signed_tx.raw_transaction).to_0x_hex()
+    def __send_tx(self, signed_tx: SignedTransaction, dry_run: bool) -> HexBytes:
+        assert not dry_run
+        return self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
 
     def _sign_and_send_tx(self, transaction, tx_params: dict, from_private_key: str, dry_run: bool = False) -> str:
         # transaction.args is sensitive info, should never be logged
         # tx_params.data is sensitive info, should never be logged
 
         signed_tx = self.w3.eth.account.sign_transaction(tx_params, from_private_key)
-        tx_hash = self.__send_tx(signed_tx, dry_run)
-        self.logger.warning(f"Transaction sent: {tx_hash}: {ContractService.tx_to_log_string(transaction, tx_params)}")
-        
+
         if dry_run:
-            return tx_hash
+            return "0x" + "00" * 32
 
-        click.echo(f"Waiting for transaction {tx_hash}")
-        receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash)
+        # NOT DRY RUN, SENDING TRANSACTION
 
-        if receipt.status == 0:
+        tx_hash = self.__send_tx(signed_tx, dry_run)
+        self.logger.warning(f"Transaction sent: {tx_hash.to_0x_hex()}: {ContractService.tx_to_log_string(transaction, tx_params)}")
+
+        click.echo(f"Waiting for transaction {tx_hash.to_0x_hex()}...")
+        receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=60 * 5, poll_latency=5)  # 5 minutes timeout, 5 seconds polling interval
+
+        if receipt["status"] == 0:
             tx = self.w3.eth.get_transaction(tx_hash)
+
             # this call should revert with the same error as the transaction
             result = self.w3.eth.call({"to": tx["to"], "from": tx["from"], "data": tx["input"]}, receipt["blockNumber"])
             raise Exception(f"Transaction reverted (reason unknown, call returned: {result.hex() if result else 'empty'})")
 
-        return tx_hash
-            
+        return tx_hash.to_0x_hex()
+
     def sign_and_send_tx(self, transaction, from_private_key: str) -> str:
         # transaction.args is sensitive info, should never be logged
 
@@ -160,7 +163,7 @@ class ContractService:
 
         try:
             # tx_params.data is sensitive info, should never be logged
-            tx_params = transaction.build_transaction({"from": from_address, "nonce": nonce, "gas": 10000000})
+            tx_params = transaction.build_transaction({"from": from_address, "nonce": nonce})
 
             _dry_run = is_dry_run()
 
@@ -190,6 +193,9 @@ class ContractService:
 
     @staticmethod
     def tx_to_log_string(transaction, tx_params: dict | None) -> str:
+        # transaction.args is sensitive info, should never be logged
+        # tx_params.data is sensitive info, should never be logged
+
         result = {
             "chainId": tx_params["chainId"],
             "from": tx_params["from"],
@@ -214,22 +220,27 @@ class ContractService:
         return ContractService.get_w3().eth.chain_id
 
     @staticmethod
-    def get_address_nonce(from_address: Address, w3: Web3 | None = None) -> int:
+    def get_address_nonce(from_address: Address,
+                          w3: Web3 | None = None,
+                          block_identifier: str = "pending") -> int:
         try:
             w3 = w3 if w3 else ContractService.get_w3()
             assert w3
 
             latest_nonce = w3.eth.get_transaction_count(from_address, "latest")
+            if block_identifier == "latest":
+                return latest_nonce
+
+            assert block_identifier == "pending", f"Unsupported block identifier: {block_identifier}"
             pending_nonce = w3.eth.get_transaction_count(from_address, "pending")
 
             while pending_nonce > latest_nonce:
                 while pending_nonce > latest_nonce:
                     # update pending_nonce loop
                     click.echo(f"Address {from_address} has {pending_nonce - latest_nonce} pending transaction(s), waiting...")
-                    # TODO LATER timeout for fetching nonce
                     latest_nonce = w3.eth.get_transaction_count(from_address, "latest")
 
-                    time.sleep(3)
+                    time.sleep(5)
 
                 # update pending_nonce loop
                 pending_nonce = w3.eth.get_transaction_count(from_address, "pending")

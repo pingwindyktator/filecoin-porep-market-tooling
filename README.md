@@ -37,6 +37,7 @@ Run the script: `python3 ./porep_tooling_cli.py` and follow help prompts.
     1. `[ADMIN|CLIENT|SP]_PRIVATE_KEY` variable in the system environment variables,
     2. `[ADMIN|CLIENT|SP]_PRIVATE_KEY` variable in the local `.env` file,
     3. if non of those are set, the app will prompt the user to input the private key for required operations in a secure manner.
+- The app expects the private key to be 32-byte raw private key (hex, 0x-prefixed).
 - Read-only commands do not require private key set, though some of them require user's address.
 - To avoid confusion, for all blockchain transactions, the app expects the `--address` option to match provided private key.
 - Rule of thumb: the private key you set is the one that signs and sends transactions, \

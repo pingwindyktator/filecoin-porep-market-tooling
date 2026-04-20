@@ -11,6 +11,7 @@ from cli import utils
 from cli._cli import is_dry_run
 
 
+# TODO LATER use inbuilt eth_typing / web3 Address type?
 class Address(str):
     ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 

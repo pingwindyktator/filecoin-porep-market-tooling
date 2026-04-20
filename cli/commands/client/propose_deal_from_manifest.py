@@ -14,6 +14,8 @@ from cli.services.contracts.usdc_token import USDCToken
 
 
 def _fetch_manifest(manifest_url: str) -> list[dict]:
+    click.echo("Fetching manifest...")
+
     try:
         # download manifest
         manifest = requests.get(manifest_url, timeout=30).json()
@@ -201,16 +203,13 @@ def propose_deal_from_manifest(manifest_url: str,
 
 
 # TODO LATER remove me
-@click.command()
+@click.command(hidden=True)
 @click.argument("manifest-url", default="http://117.55.199.67:9090/api/preparation/fsboard/piece")
 def propose_deal_from_manifest_mocked(manifest_url: str):
-    """
-    Testing and development purposes.
-    """
-
     retrievability_bps = 10
     bandwidth_mbps = 1
     price_per_sector_per_month = utils.to_wei(2, USDCToken().decimals())  # 2 USDC per sector per month
+    # price_per_sector_per_month = 1
     duration_months = 3
     latency_ms = 999
     indexing_pct = 1

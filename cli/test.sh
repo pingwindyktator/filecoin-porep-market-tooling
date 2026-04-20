@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# Testing and development purposes.
-
 # TODO LATER validate is output is always json
 # Simple tool that runs all CLI get commands that requires no user input.
 # Expects process exit code and nothing more.

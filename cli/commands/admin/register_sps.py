@@ -177,10 +177,6 @@ def register_db_sps(db_url: str, db_id: int | None = None, indexing_pct: int = 0
         admin_private_key())
 
 
-@click.command()
+@click.command(hidden=True)
 def register_devnet_sps():
-    """
-    Testing and development purposes.
-    """
-
     _register_sps(admin_utils.get_devnet_sps(), admin_private_key())

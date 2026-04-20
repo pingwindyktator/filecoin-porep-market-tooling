@@ -15,6 +15,7 @@ readonly CLI_PATH="${SCRIPT_DIR}/../porep_tooling_cli.py"
 # export all env vars from .env.test
 set -a
 source "${SCRIPT_DIR}/.env.test"
+export DEBUG=true
 set +a
 
 (

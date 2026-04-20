@@ -9,7 +9,7 @@ from eth_account.types import PrivateKeyType
 from eth_typing import ABIElement
 from hexbytes import HexBytes
 from web3 import Web3
-from web3.exceptions import ContractCustomError
+from web3.exceptions import ContractCustomError, Web3RPCError
 from web3.types import RPCEndpoint
 
 from cli import utils
@@ -153,7 +153,7 @@ class ContractService:
         self.logger.warning(f"Transaction sent: {tx_hash.to_0x_hex()}: {ContractService.tx_to_log_string(transaction, tx_params)}")
 
         click.echo(f"Waiting for transaction {tx_hash.to_0x_hex()}...")
-        receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=60 * 5, poll_latency=5)  # 5 minutes timeout, 5 seconds polling interval
+        receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=60 * 15, poll_latency=5)  # 15 minutes timeout, 5 seconds polling interval
 
         if receipt["status"] == 0:
             # tx failed
@@ -200,9 +200,18 @@ class ContractService:
             reason = self.__decode_contract_error_name(cce)
             self.logger.error(f"Transaction reverted with error: {reason}: {ContractService.tx_to_log_string(transaction, tx_params)}")
             raise Exception(f"Transaction reverted with error: {reason}") from cce
+        except Web3RPCError as rpc_err:
+            reason = rpc_err.rpc_response["error"]["message"] if (rpc_err.rpc_response and
+                                                                  "error" in rpc_err.rpc_response and
+                                                                  "message" in rpc_err.rpc_response["error"] and
+                                                                  rpc_err.rpc_response["error"]["message"]) else str(rpc_err)
+
+            self.logger.error(f"Web3 RPC error: {reason}: {ContractService.tx_to_log_string(transaction, tx_params)}")
+            raise Exception(f"Web3 RPC error: {reason}") from rpc_err
         except Exception as e:
-            self.logger.error(f"Transaction failed: {str(e)}: {ContractService.tx_to_log_string(transaction, tx_params)}")
-            raise Exception(f"Transaction failed: {str(e)}") from e
+            reason = str(e)
+            self.logger.error(f"Transaction failed: {reason}: {ContractService.tx_to_log_string(transaction, tx_params)}")
+            raise Exception(f"Transaction failed: {reason}") from e
 
     @staticmethod
     def tx_to_log_string(transaction, tx_params: dict | None) -> str:

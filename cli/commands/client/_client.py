@@ -85,4 +85,4 @@ def wait():
     """
 
     # wait for pending transactions
-    _ = ContractService.get_address_nonce(client_address())
+    _ = ContractService.get_address_nonce(client_address(), block_identifier="pending")

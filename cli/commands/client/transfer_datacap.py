@@ -15,7 +15,7 @@ EPOCHS_PER_MONTH = EPOCHS_PER_DAY * 30
 BATCH_SIZE = 10
 
 
-def _prepare_batches(deal_id: int, start_batch: int, dry_run: bool | None, from_private_key: PrivateKeyType):
+def _transfer_datacap(deal_id: int, start_batch: int, print_only: bool | None, from_private_key: PrivateKeyType):
     deal = PoRepMarket().get_deal_proposal(deal_id)
 
     if deal.state != PoRepMarketDealState.ACCEPTED:
@@ -54,7 +54,7 @@ def _prepare_batches(deal_id: int, start_batch: int, dry_run: bool | None, from_
 
         is_completed = current_batch_number == len(batches)
 
-        if dry_run:
+        if print_only:
             click.echo(f"to={params.to[0].hex()}  amount={params.amount[0].hex()}  operator_data={params.operator_data.hex()}   is_completed={is_completed}")
         else:
             tx_hash = client_contract.transfer(params, deal_id, is_completed, from_private_key)
@@ -62,21 +62,29 @@ def _prepare_batches(deal_id: int, start_batch: int, dry_run: bool | None, from_
 
         click.echo(f"Batch {current_batch_number} done.")
 
+    click.echo("\nAll done!")
+
 
 @click.command()
 @click.argument("deal_id", type=click.IntRange(min=0))
-@click.option("--dry-run", is_flag=True, default=False, show_default=True, help="Print transfer params without broadcasting.")
-@click.option("--start-batch", type=click.IntRange(min=1), default=1, show_default=True, help="Batch number to start from (1-based index).")
-def prepare_batches(deal_id: int, start_batch: int, dry_run: bool | None = None):
+@click.option("--print-only", is_flag=True, default=False, show_default=True, help="Print transfer params without broadcasting.")
+@click.option("--start-batch", type=click.IntRange(min=1), default=1, show_default=True, help="Batch index to start from (starting from 1).")
+def transfer_datacap(deal_id: int, start_batch: int, print_only: bool | None = None):
     """
-    Prepares and optionally sends DDO allocation transactions for a given DEAL_ID in batches.
+    Interactively transfer DataCap tokens for accepted deal to the SP in batches (groups).
 
-    DEAL_ID: ID of the deal to prepare batches for.
+    DEAL_ID: ID of the deal to transfer DataCap for.
+
+    \b
+    1. Fetch the deal proposal and manifest for the given DEAL_ID,
+    2. prepare transfer parameters for each batch of pieces,
+    3. transfer each batch of datacap to the SP until all batches are transferred,
+    4. IMPORTANT: mark deal as completed in the last batch transfer to allow SP to submit the proof and receive payment.
     """
 
     ContractService.wait_for_pending_transactions(client_address())
 
-    _prepare_batches(deal_id, start_batch, dry_run, client_private_key())
+    _transfer_datacap(deal_id, start_batch, print_only, client_private_key())
 
 
 def _build_operator_data_batch(provider_id: int, batch: list[tuple[str, int]], term_min: int, term_max: int, expiration: int) -> bytes:
@@ -104,9 +112,7 @@ def _build_operator_data_batch(provider_id: int, batch: list[tuple[str, int]], t
 
 
 def _batch_pieces(pieces: list[dict]) -> list[list[tuple[str, int]]]:
-    result = [
+    return [
         [(p["pieceCid"], int(p["pieceSize"])) for p in pieces[i:i + BATCH_SIZE]]
         for i in range(0, len(pieces), BATCH_SIZE)
     ]
-
-    return result

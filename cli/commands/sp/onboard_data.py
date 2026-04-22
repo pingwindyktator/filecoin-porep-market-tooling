@@ -16,6 +16,7 @@ from cli.services.contracts.porep_market import PoRepMarket, PoRepMarketDealStat
 @click.option("--output-dir", type=click.Path(), required=True, help="Directory to save downloaded pieces")
 @click.option("--jobs", default=1, type=click.IntRange(min=1), show_default=True, help="Number of parallel downloads")
 # TODO add commP files verification after download
+# TODO add custom port + host options for download URL
 def onboard_data(deal_id: int, output_dir: str, jobs: int):
     """
     Onboard (download) data for a given deal using aria2 downloader.
@@ -39,7 +40,6 @@ def onboard_data(deal_id: int, output_dir: str, jobs: int):
         raise Exception(f"Deal id {deal_id} is not in COMPLETED state")
 
     _output_dir = Path(output_dir).resolve()
-    _output_dir.mkdir(parents=True, exist_ok=True)
     manifest_file = _output_dir / f"manifest_{deal.deal_id}.json"
     manifest = commands_utils.fetch_manifest(deal.manifest_location, show_manifest=False, retries=10)
 
@@ -67,11 +67,10 @@ def onboard_data(deal_id: int, output_dir: str, jobs: int):
 
             for piece in pieces:
                 storage_path = piece["storagePath"]
+                output_file = (_output_dir / storage_path).resolve()
                 piece_name = storage_path.removesuffix(".car")
 
-                output_file = _output_dir / storage_path
-                output_file.parent.mkdir(parents=True, exist_ok=True)
-
+                # disallow path traversal outside of the output directory
                 if _output_dir not in output_file.parents:
                     raise Exception(f"Invalid manifest piece storagePath: {storage_path}")
 
@@ -86,6 +85,8 @@ def onboard_data(deal_id: int, output_dir: str, jobs: int):
             if not utils.ask_user_confirm("\n\nContinue?", default_answer=True):
                 click.echo("Canceled!")
                 return
+
+        _output_dir.mkdir(parents=True, exist_ok=True)
 
         with open(manifest_file, "w", encoding="utf-8") as f:
             f.write(utils.json_pretty(manifest))

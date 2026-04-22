@@ -79,12 +79,11 @@ def fetch_manifest(manifest_url: str, show_manifest: bool | None = None, retries
                     raise Exception(f"Network error while fetching manifest: {e}") from e
 
             else:
-                retries -= 1
-
                 if retries <= 0:
                     raise Exception(f"Network error while fetching manifest: {e}") from e
                 else:
                     click.echo(f"Retrying... ({retries} retries left)")
+                    retries -= 1
 
 
 def _fetch_manifest(manifest_url: str, show_manifest: bool | None = None) -> list[dict]:
@@ -126,7 +125,8 @@ def _fetch_manifest(manifest_url: str, show_manifest: bool | None = None) -> lis
                     "pieceType" in piece and
                     "pieceSize" in piece and
                     "preparationId" in piece and
-                    "attachmentId" in piece
+                    "attachmentId" in piece and
+                    "storagePath" in piece
                     for piece in manifest[0]["pieces"])
         ):
             raise ValueError("Invalid manifest format")

@@ -13,8 +13,8 @@ from cli.services.contracts.porep_market import PoRepMarket, PoRepMarketDealStat
 
 @click.command()
 @click.argument("deal_id", type=click.IntRange(min=0))
-@click.option("--output-dir", type=click.Path(), required=True, help="Directory to save downloaded pieces")
-@click.option("--jobs", default=1, type=click.IntRange(min=1), show_default=True, help="Number of parallel downloads")
+@click.option("--output-dir", type=click.Path(), required=True, help="Directory to save downloaded pieces.")
+@click.option("--jobs", default=1, type=click.IntRange(min=1), show_default=True, help="Number of parallel downloads.")
 # TODO add commP files verification after download
 # TODO add custom port + host options for download URL
 def onboard_data(deal_id: int, output_dir: str, jobs: int):
@@ -32,7 +32,9 @@ def onboard_data(deal_id: int, output_dir: str, jobs: int):
     try:
         subprocess.run([aria2c_path, "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
     except Exception:
-        raise Exception("aria2c is not installed or not found in PATH. Please install aria2c to use this command.")
+        raise Exception("aria2c not found. Please install aria2c to use this command. "
+                        "See https://aria2.github.io/ and https://github.com/aria2/aria2 for more information. "
+                        "Set the ARIA2C_PATH environment variable if aria2c is installed but not in PATH.")
 
     deal = PoRepMarket().get_deal_proposal(deal_id)
 

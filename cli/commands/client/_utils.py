@@ -2,7 +2,6 @@ import time
 from math import ceil
 
 import click
-import requests
 from eth_account.datastructures import SignedMessage
 from eth_account.types import PrivateKeyType
 from web3.auto import w3
@@ -72,82 +71,3 @@ def sign_filecoinpay_permit(amount: int, permit_deadline: int, from_private_key:
 
     click.echo(f"EIP-712 message signed for FileCoinPay permit: {utils.private_str_to_log_str(signed_msg.signature.hex())}")
     return signed_msg
-
-
-def fetch_manifest(manifest_url: str, show_manifest: bool | None = None) -> list[dict]:
-    click.echo(f"Fetching manifest from {manifest_url}")
-
-    while True:
-        try:
-            return _fetch_manifest(manifest_url, show_manifest)
-        except requests.exceptions.RequestException as e:
-            if not utils.ask_user_confirm(f"\nFailed to fetch manifest:\n{e}.\nRetry?", default_answer=True):
-                raise Exception(f"Network error while fetching manifest: {e}") from e
-
-
-def _fetch_manifest(manifest_url: str, show_manifest: bool | None = None) -> list[dict]:
-    MINIMUM_DAG_PIECE_SIZE_BYTES = 1024 * 1024  # 1 MiB
-
-    # download manifest
-    resp = requests.get(manifest_url, timeout=30)
-    resp.raise_for_status()
-
-    try:
-        manifest = resp.json()
-    except ValueError as e:
-        raise ValueError(f"Manifest is not a valid JSON: {e}") from e
-
-    click.echo("Manifest downloaded")
-
-    # show manifest
-    if show_manifest or (show_manifest is None and utils.ask_user_confirm("Show manifest?", default_answer=False)):
-        _manifest = utils.json_pretty(manifest)
-        click.echo_via_pager("\n".join([f"{i + 1}. {line}" for i, line in enumerate(_manifest.splitlines())]))
-        click.echo()
-
-    try:
-        # validate manifest format
-        if not (
-                manifest and
-                isinstance(manifest, list) and
-                len(manifest) == 1 and
-
-                manifest[0] and
-                isinstance(manifest[0], dict) and
-                "pieces" in manifest[0] and
-
-                manifest[0]["pieces"] and
-                isinstance(manifest[0]["pieces"], list) and
-
-                all(isinstance(piece, dict) and
-                    "pieceCid" in piece and
-                    "pieceType" in piece and
-                    "pieceSize" in piece and
-                    "preparationId" in piece and
-                    "attachmentId" in piece
-                    for piece in manifest[0]["pieces"])
-        ):
-            raise ValueError("Invalid manifest format")
-
-        # validate manifest pieces
-        pieces = manifest[0]["pieces"]
-        data_pieces = [piece for piece in pieces if piece["pieceType"] == "data"]
-        dag_pieces = [piece for piece in pieces if piece["pieceType"] == "dag"]
-
-        if len(pieces) <= 1 or len(data_pieces) != len(pieces) - 1 or len(dag_pieces) != 1:
-            raise ValueError("Invalid manifest pieces: must contain exactly one dag piece and at least one data piece")
-
-        if not all(piece["preparationId"] == pieces[0]["preparationId"] for piece in pieces):
-            raise ValueError("Invalid preparationId in manifest pieces: must be the same for all pieces")
-
-        if not all(piece["attachmentId"] == pieces[0]["attachmentId"] for piece in pieces):
-            raise ValueError("Invalid attachmentId in manifest pieces: must be the same for all pieces")
-
-        if dag_pieces[0]["pieceSize"] < MINIMUM_DAG_PIECE_SIZE_BYTES:
-            raise ValueError(f"Invalid dag piece size in manifest: must be at least 1 MiB "
-                             f"({dag_pieces[0]['pieceSize']} < {MINIMUM_DAG_PIECE_SIZE_BYTES} bytes)")
-        #
-    except KeyError as e:
-        raise ValueError(f"Invalid manifest format: missing key {e}") from e
-
-    return manifest

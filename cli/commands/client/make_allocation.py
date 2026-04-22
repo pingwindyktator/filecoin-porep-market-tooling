@@ -4,7 +4,7 @@ import multibase
 from eth_account.types import PrivateKeyType
 
 from cli import utils
-from cli.commands.client import _utils as client_utils
+from cli.commands import utils as commands_utils
 from cli.commands.client._client import client_private_key, client_address
 from cli.services.contracts.client_contract import ClientContract
 from cli.services.contracts.contract_service import ContractService
@@ -27,7 +27,7 @@ def _make_allocation(deal_id: int,
     if deal.state != PoRepMarketDealState.ACCEPTED:
         raise Exception(f"Deal id {deal_id} is not in ACCEPTED state")
 
-    manifest = client_utils.fetch_manifest(deal.manifest_location, show_manifest=False)
+    manifest = commands_utils.fetch_manifest(deal.manifest_location, show_manifest=False)
     pieces = manifest[0]["pieces"]
 
     if exclude_dag:

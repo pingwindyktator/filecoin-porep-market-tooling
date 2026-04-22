@@ -18,7 +18,7 @@ def get_env_required(name, default: T | None = None, required_type: Callable[[st
     return get_env(name, required=True, default=default, required_type=required_type)
 
 
-def get_env(name, required=True, default: T | None = None, required_type: Callable[[str], T] = str) -> T | None:
+def get_env(name, required=False, default: T | None = None, required_type: Callable[[str], T] = str) -> T | None:
     value = os.getenv(name)
 
     def is_empty(v):
@@ -113,7 +113,7 @@ def json_dataclass(eq=True, init=True, **d_kwargs):
     return wrapper
 
 
-def json_pretty(json_data):
+def json_pretty(json_data, sort_keys: bool = False):
     def _json_pretty(data):
         if issubclass(type(data), enum.Enum):
             return data.name
@@ -126,7 +126,7 @@ def json_pretty(json_data):
 
         return data
 
-    return json.dumps(_json_pretty(json_data), indent=4)
+    return json.dumps(_json_pretty(json_data), indent=4, sort_keys=sort_keys)
 
 
 # converts 1100000000000000000 wei -> 1.1 ETH

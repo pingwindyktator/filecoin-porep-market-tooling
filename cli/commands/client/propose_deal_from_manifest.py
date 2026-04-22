@@ -24,7 +24,7 @@ def _propose_deal_from_manifest(manifest_url: str,
                                 indexing_pct: int,
                                 from_private_key: PrivateKeyType):
     #
-    manifest = client_utils.fetch_manifest(manifest_url)
+    manifest = commands_utils.fetch_manifest(manifest_url)
     pieces = manifest[0]["pieces"]
     pieces_size_bytes = sum(piece["pieceSize"] for piece in pieces)
 

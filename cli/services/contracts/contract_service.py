@@ -109,10 +109,10 @@ class ContractService:
         return self.__class__.__name__
 
     def filecoin_address(self) -> str:
-        return Address(self.contract.address).to_filecoin_address()
+        return self.contract.address.to_filecoin_address()
 
-    def actor_id(self) -> str:
-        return Address(self.contract.address).to_actor_id()
+    def actor_id(self) -> int:
+        return self.contract.address.to_actor_id()
 
     def __decode_contract_error_name(self, err: ContractCustomError) -> str:
         def find_error_in_abi(selector: bytes) -> ABIElement | None:

@@ -5,7 +5,7 @@ from cli import utils
 
 class RPCUtils:
     @staticmethod
-    def get_state_client_allocations(actor_id: int) -> dict:
+    def state_get_allocations(actor_id: int) -> dict:
         method = "Filecoin.StateGetAllocations"
         response = ContractService.get_w3().provider.make_request(
             RPCEndpoint(method),

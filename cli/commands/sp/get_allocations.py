@@ -40,7 +40,7 @@ def get_allocations(deal_id: int):
 
     client_contract = ClientContract()
     client_allocations = client_contract.get_client_allocation_ids_per_deal(deal_id)
-    state_allocations = RPCUtils.get_state_client_allocations(client_contract.actor_id())
+    state_allocations = RPCUtils.state_get_allocations(client_contract.actor_id())
     aggregated_allocations = aggregate_allocations(state_allocations, client_allocations, pieces)
 
     click.echo(utils.json_pretty(aggregated_allocations))

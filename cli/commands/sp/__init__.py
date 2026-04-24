@@ -5,6 +5,7 @@ from .get_registered_info import get_registered_info
 from .manage_proposed_deals import manage_proposed_deals
 from .onboard_data import onboard_data
 from .reject_deal import reject_deal
+from .get_allocations import get_allocations
 
 sp.add_command(info)
 sp.add_command(wait)
@@ -14,3 +15,4 @@ sp.add_command(accept_deal)
 sp.add_command(reject_deal)
 sp.add_command(manage_proposed_deals)
 sp.add_command(get_registered_info)
+sp.add_command(get_allocations)

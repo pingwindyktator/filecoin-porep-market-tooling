@@ -45,6 +45,24 @@ class Address(str):
     def __hash__(self):
         return super().__hash__()
 
+    def to_filecoin_address(self) -> str:
+        method = "Filecoin.EthAddressToFilecoinAddress"
+        response = ContractService.get_w3().provider.make_request(RPCEndpoint(method), [self])
+
+        if "error" in response:
+            raise Exception(response["error"])
+
+        return response["result"]
+
+    def to_actor_id(self) -> int:
+        method = "Filecoin.StateLookupID"
+        response = ContractService.get_w3().provider.make_request(RPCEndpoint(method), [self.to_filecoin_address(), None])
+
+        if "error" in response:
+            raise Exception(response["error"])
+
+        return utils.f0_str_id_to_int(response["result"])
+
     @staticmethod
     def is_filecoin_address(addr: str) -> bool:
         return addr.startswith(("f0", "f1", "f2", "f3", "f4", "f5", "t"))
@@ -89,6 +107,12 @@ class ContractService:
 
     def _get_class_name(self):
         return self.__class__.__name__
+
+    def filecoin_address(self) -> str:
+        return Address(self.contract.address).to_filecoin_address()
+
+    def actor_id(self) -> str:
+        return Address(self.contract.address).to_actor_id()
 
     def __decode_contract_error_name(self, err: ContractCustomError) -> str:
         def find_error_in_abi(selector: bytes) -> ABIElement | None:

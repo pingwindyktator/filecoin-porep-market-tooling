@@ -22,3 +22,10 @@ class ClientContract(ContractService):
     # @dev Reverts with UnfairDistribution when trying to give too much to single SP
     def transfer(self, transfer_params: tuple, deal_id: int, deal_completed: bool, from_private_key: PrivateKeyType) -> str:
         return self.sign_and_send_tx(self.contract.functions.transfer(transfer_params, deal_id, deal_completed), from_private_key)
+
+    # @notice custom getter to retrieve allocation ids per client and provider
+    # @param dealId the id of the deal
+    # @return allocationIds the allocation ids for the client and provider
+    def get_client_allocation_ids_per_deal(self, deal_id: int) -> list[int]:
+        return self.contract.functions.getClientAllocationIdsPerDeal(deal_id).call()
+

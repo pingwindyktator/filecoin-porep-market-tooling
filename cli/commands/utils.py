@@ -1,3 +1,9 @@
+from cli.utils import json_pretty
+from urllib.parse import ParseResult
+from requests.compat import urlunparse
+import ipaddress
+import socket
+from requests.compat import urlparse
 import click
 import requests
 from eth_account.types import PrivateKeyType
@@ -10,6 +16,65 @@ from cli.services.contracts.porep_market import PoRepMarketDealState, PoRepMarke
 # TODO LATER take sector size from smart contracts
 SECTOR_SIZE_BYTES = 32 * 1024 ** 3  # 32 GiB
 
+@utils.json_dataclass()
+class ManifestPiece:
+    id: int
+    createdAt: str
+    pieceType: str       
+    pieceCid: str         
+    pieceSize: int       
+    rootCid: str
+    fileSize: int
+    minPieceSizePadding: int
+    storageId: int
+    storagePath: str
+    numOfFiles: int
+    preparationId: int
+    attachmentId: int
+    jobId: int
+
+@utils.json_dataclass()
+class DealManifestConfig:
+    case_insensitive: str
+    case_sensitive: str
+    copy_links: str
+    description: str
+    encoding: str
+    hashes: str
+    links: str
+    no_check_updated: str
+    no_clone: str
+    no_preallocate: str
+    no_set_modtime: str
+    no_sparse: str
+    nounc: str
+    one_file_system: str
+    skip_links: str
+    skip_specials: str
+    time_type: str
+    unicode_normalization: str
+    zero_size_links: str
+
+@utils.json_dataclass()
+class DealManifestSource:
+    id: int
+    name: str
+    createdAt: str
+    updatedAt: str
+    type: str
+    path: str
+    config: DealManifestConfig
+    clientConfig: dict
+
+@utils.json_dataclass()
+class _DealManifest:
+    attachmentId: int
+    storageId: int
+    source: DealManifestSource
+    pieces: list[ManifestPiece]
+
+
+DealManifest = list[_DealManifest]
 
 def bytes_to_sectors(bytes_size: int) -> float:
     return bytes_size / SECTOR_SIZE_BYTES
@@ -67,12 +132,15 @@ def validate_address_matches_private_key(address: Address, private_key: PrivateK
 
 
 # retries = None means "ask user"
-def fetch_manifest(manifest_url: str, show_manifest: bool | None = None, retries: int | None = None) -> list[dict]:
-    click.echo(f"Fetching manifest from {manifest_url}")
+def fetch_manifest(manifest_url: str, show_manifest: bool | None = None, retries: int | None = None, quiet: bool = False) -> DealManifest:
+    if not quiet:
+        click.echo(f"Fetching manifest from {manifest_url}")
+
+    parsed_url = _get_manifest_hostname(manifest_url)
 
     while True:
         try:
-            return _fetch_manifest(manifest_url, show_manifest)
+            return _fetch_manifest(parsed_url, show_manifest, quiet)
         except requests.exceptions.RequestException as e:
             if retries is None:
                 if not utils.ask_user_confirm(f"\nFailed to fetch manifest:\n{e}.\nRetry?", default_answer=True):
@@ -82,15 +150,33 @@ def fetch_manifest(manifest_url: str, show_manifest: bool | None = None, retries
                 if retries <= 0:
                     raise Exception(f"Network error while fetching manifest: {e}") from e
                 else:
-                    click.echo(f"Retrying... ({retries} retries left)")
+                    if not quiet:
+                        click.echo(f"Retrying... ({retries} retries left)")
+
                     retries -= 1
 
 
-def _fetch_manifest(manifest_url: str, show_manifest: bool | None = None) -> list[dict]:
+def _get_manifest_hostname(manifest_url: str) -> ParseResult:
+    parsed = urlparse(manifest_url)
+    if parsed.scheme not in ("http", "https") or not parsed.hostname:
+        raise ValueError("Manifest URL must use http/https")
+
+    ip = socket.gethostbyname(parsed.hostname)
+    addr = ipaddress.ip_address(ip)
+    if addr.is_private or addr.is_loopback or addr.is_reserved or addr.is_link_local or addr.is_multicast:
+        raise ValueError(f"Manifest URL resolves to a disallowed IP address: {ip}")
+
+    return parsed
+
+
+def _fetch_manifest(parsed_url: ParseResult, show_manifest: bool | None = None, quiet: bool = False) -> DealManifest:
     MINIMUM_DAG_PIECE_SIZE_BYTES = 1024 * 1024  # 1 MiB
 
     # download manifest
-    resp = requests.get(manifest_url, timeout=30)
+    ip = socket.gethostbyname(parsed_url.hostname)
+    netloc = f"{ip}:{parsed_url.port}" if parsed_url.port else ip
+    ip_url = urlunparse(parsed_url._replace(netloc=netloc))
+    resp = requests.get(ip_url, headers={"Host": parsed_url.hostname}, timeout=30)
     resp.raise_for_status()
 
     try:
@@ -98,7 +184,8 @@ def _fetch_manifest(manifest_url: str, show_manifest: bool | None = None) -> lis
     except ValueError as e:
         raise ValueError(f"Manifest is not a valid JSON: {e}") from e
 
-    click.echo("Manifest downloaded")
+    if not quiet:
+        click.echo("Manifest downloaded")
 
     # show manifest
     if show_manifest or (show_manifest is None and utils.ask_user_confirm("Show manifest?", default_answer=False)):
@@ -151,5 +238,6 @@ def _fetch_manifest(manifest_url: str, show_manifest: bool | None = None) -> lis
         #
     except KeyError as e:
         raise ValueError(f"Invalid manifest format: missing key {e}") from e
-
+    
+    # TODO return DealManifest type here
     return manifest

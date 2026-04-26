@@ -31,15 +31,15 @@ def onboard_data(deal_id: int, output_dir: str, jobs: int):
 
     try:
         subprocess.run([aria2c_path, "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-    except Exception:
-        raise Exception("aria2c not found. Please install aria2c to use this command. "
-                        "See https://aria2.github.io/ and https://github.com/aria2/aria2 for more information. "
-                        "Set the ARIA2C_PATH environment variable if aria2c is installed but not in PATH.")
+    except Exception as e:
+        raise RuntimeError("aria2c not found. Please install aria2c to use this command. "
+                           "See https://aria2.github.io/ and https://github.com/aria2/aria2 for more information. "
+                           "Set the ARIA2C_PATH environment variable if aria2c is installed but not in PATH.") from e
 
     deal = PoRepMarket().get_deal_proposal(deal_id)
 
     if deal.state != PoRepMarketDealState.COMPLETED:
-        raise Exception(f"Deal id {deal_id} is not in COMPLETED state")
+        raise click.ClickException(f"Deal id {deal_id} is not in COMPLETED state")
 
     _output_dir = Path(output_dir).resolve()
     manifest_file = _output_dir / f"manifest_{deal.deal_id}.json"
@@ -50,11 +50,8 @@ def onboard_data(deal_id: int, output_dir: str, jobs: int):
             existing_manifest = json.load(f)
 
         if utils.json_pretty(existing_manifest, True) != utils.json_pretty(manifest, True):
-            if not utils.ask_user_confirm(f"A different manifest already exists in the output directory: {manifest_file}\n"
-                                          "Do you want to overwrite it?", default_answer=False):
-                #
-                click.echo("Canceled!")
-                return
+            click.confirm(f"A different manifest already exists in the output directory: {manifest_file}\n"
+                          "Do you want to overwrite it?", abort=True)
 
     host = urlparse(deal.manifest_location)
     download_host = f"{host.scheme or 'http'}://{host.hostname}:7777"
@@ -74,7 +71,7 @@ def onboard_data(deal_id: int, output_dir: str, jobs: int):
 
                 # disallow path traversal outside of the output directory
                 if _output_dir not in output_file.parents:
-                    raise Exception(f"Invalid manifest piece storagePath: {storage_path}")
+                    raise click.ClickException(f"Invalid manifest piece storagePath: {storage_path}")
 
                 download_url = f"{download_host}/piece/{piece_name}"
 
@@ -84,9 +81,7 @@ def onboard_data(deal_id: int, output_dir: str, jobs: int):
 
                 click.echo(f"Download {download_url} -> {output_file}")
 
-            if not utils.ask_user_confirm("\n\nContinue?", default_answer=True):
-                click.echo("Canceled!")
-                return
+            click.confirm("\n\nContinue?", default=True, abort=True)
 
         _output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -111,6 +106,6 @@ def onboard_data(deal_id: int, output_dir: str, jobs: int):
             )
             #
         except subprocess.CalledProcessError as e:
-            raise Exception(f"aria2c failed with exit code {e.returncode}")
+            raise RuntimeError(f"aria2c failed with exit code {e.returncode}")
     finally:
         aria2_file.unlink(missing_ok=True)

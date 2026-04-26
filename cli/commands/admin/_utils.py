@@ -1,3 +1,4 @@
+import click
 import humanfriendly
 
 from cli import utils
@@ -81,34 +82,34 @@ def get_db_sps(db_url: str,
 
     for org in organizations:
         if Address.is_filecoin_address(org.payment_address_evm):
-            utils.ask_user_ok(
+            utils.confirm_ok(
                 f"Organization {org.organization_address} [db_id {org.id}] has payment_address_evm {org.payment_address_evm} which is a Filecoin f-address, "
                 f"expected EVM 0x-address. "
                 f"Cannot return SPs from this organization")
             continue
 
         if org.deal_duration_min_months < 0:
-            utils.ask_user_ok(
+            utils.confirm_ok(
                 f"Organization {org.organization_address} [db_id {org.id}] has invalid min deal duration of {org.deal_duration_min_months} months. "
                 f"Cannot return SPs from this organization")
             continue
 
         if org.kyc_status.strip().lower() != "approved":
-            if not utils.ask_user_confirm(
+            if not click.confirm(
                     f"Organization {org.organization_address} [db_id {org.id}] has kyc_status {org.kyc_status}, which is not approved. "
                     f"Return SPs from this organization?",
-                    default_answer=bool(organization_id)):
+                    default=bool(organization_id)):
                 continue
 
         # TODO LATER get 1278 from smart contract
         if org.deal_duration_max_months * 30 > 1278:  # PoRep Market smart contracts assumes month == 30 days
             max_deal_duration_days = 42 * 30  # 42 months
 
-            if not utils.ask_user_confirm(
+            if not click.confirm(
                     f"Organization {org.organization_address} [db_id {org.id}] has max deal duration of {org.deal_duration_max_months * 30} days "
                     f"which exceeds the SPRegistry contract limit of {max_deal_duration_days} days. It will be truncated to this value. "
                     f"Return SPs from this organization?",
-                    default_answer=True):
+                    default=True):
                 continue
         else:
             max_deal_duration_days = org.deal_duration_max_months * 30  # PoRep Market smart contracts assumes month == 30 days
@@ -117,17 +118,17 @@ def get_db_sps(db_url: str,
         if org.deal_duration_min_months * 30 < 180:  # PoRep Market smart contracts assumes month == 30 days
             min_deal_duration_days = 6 * 30  # 6 months
 
-            if not utils.ask_user_confirm(
+            if not click.confirm(
                     f"Organization {org.organization_address} [db_id {org.id}] has min deal duration of {org.deal_duration_min_months * 30} days "
                     f"which is below the SPRegistry contract minimum of {min_deal_duration_days} days. It will be increased to this value. "
                     f"Return SPs from this organization?",
-                    default_answer=True):
+                    default=True):
                 continue
         else:
             min_deal_duration_days = org.deal_duration_min_months * 30  # PoRep Market smart contracts assumes month == 30 days
 
         if min_deal_duration_days > max_deal_duration_days:  # PoRep Market smart contracts assumes month == 30 days
-            utils.ask_user_ok(
+            utils.confirm_ok(
                 f"Organization {org.organization_address} [db_id {org.id}] has min deal duration of {min_deal_duration_days} days, "
                 f"which exceeds the max deal duration of {max_deal_duration_days} days. "
                 f"Cannot return SPs from this organization")
@@ -138,11 +139,11 @@ def get_db_sps(db_url: str,
             _MOCK_F_ORG_ADDR = utils.get_env_required("_MOCK_F_ORG_ADDR", default="", required_type=Address).strip().lower()
             organization_address = Address(_MOCK_F_ORG_ADDR) if _MOCK_F_ORG_ADDR else Address.from_filecoin_address(org.organization_address)
 
-            if not utils.ask_user_confirm(
+            if not click.confirm(
                     f"Converted organization {org.organization_address} [db_id {org.id}] Filecoin f-organization_address "
                     f"{org.organization_address} to EVM 0x-address {organization_address}. "
                     f"Return SPs from this organization?",
-                    default_answer=True):
+                    default=True):
                 continue
         else:
             organization_address = org.organization_address

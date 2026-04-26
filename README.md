@@ -29,9 +29,7 @@ Run the script: `python3 ./porep_tooling_cli.py` and follow help prompts.
 - The app stores all blockchain transaction logs to `logs/`.
 - All blockchain transactions **require manual user confirmation** before sending. There is no option to override this. \
   If you decline the final confirmation, the command falls back to dry-run behavior without broadcasting the transaction.
-- Default behaviour is to wait for the previous transaction confirmation BEFORE sending the next one and NOT AFTER the transaction. \
-  This means that the app does not wait for the transaction receipt after sending it. \
-  This behaviour may change in the future.
+- Default behaviour is to wait for each transaction to succeed after sending it.
 - The app operates on EVM 0x-addresses and **FEVM smart contract** and does not fully support Filecoin f-addresses.
 - There are 3 ways of providing the user's private key for blockchain transactions and the priority is as follows:
     1. `[ADMIN|CLIENT|SP]_PRIVATE_KEY` variable in the system environment variables,
@@ -69,4 +67,5 @@ Run the script: `python3 ./porep_tooling_cli.py` and follow help prompts.
 
 ## Developing new CLI commands
 
-See files in `cli/commands` and follow the patterns! Also, see `./cli/test.sh`!
+See files in `cli/commands` and follow the patterns! Also, see `./cli/test.sh`! \
+Use `Exception` (`ValueError`, `RuntimeError`, ...) for internal-like errors and click.ClickException for user-like errors.

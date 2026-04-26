@@ -29,7 +29,7 @@ def get_env(name, required=False, default: T | None = None, required_type: Calla
 
     if is_empty(value):
         if required:
-            raise Exception(f"Environment variable {name} is not set, see .env file")
+            raise RuntimeError(f"Environment variable {name} is not set, see .env file")
 
         return None
 
@@ -51,7 +51,7 @@ def string_to_bool(value: str | None) -> bool | None:
         raise ValueError(f"Unknown boolean value: {value}")
 
 
-def ask_user_string(prompt: str, default_answer: str | None = None, valid_answers: list[str] | None = None) -> str:
+def confirm_str(prompt: str, default_answer: str | None = None, valid_answers: list[str] | None = None) -> str:
     default_str = f" [default: {default_answer}]" if default_answer else ""
     valid_answers = [answer.strip().lower() for answer in valid_answers] if valid_answers else []
 
@@ -68,32 +68,9 @@ def ask_user_string(prompt: str, default_answer: str | None = None, valid_answer
     assert False  # should not happen
 
 
-# TODO LATER grace exit instead of exception
-def ask_user_confirm_or_fail(prompt: str, default_answer=False):
-    if not ask_user_confirm(prompt, default_answer):
-        raise Exception("Operation cancelled by user")
-
-
-# TODO LATER use click.confirm
 # equivalent to "press enter to continue"
-def ask_user_ok(prompt: str):
-    _ = ask_user_string(f"{prompt} (OK)", default_answer="")
-
-
-def ask_user_confirm(prompt: str, default_answer=False):
-    default_str = "Y/n" if default_answer else "y/n" if default_answer is None else "y/N"
-
-    while True:
-        answer = input(f"{prompt} [{default_str}]: ").strip().lower()
-
-        if answer == "" and default_answer is not None:
-            return default_answer
-        elif answer in ["y", "yes"]:
-            return True
-        elif answer in ["n", "no"]:
-            return False
-        else:
-            continue
+def confirm_ok(prompt: str):
+    _ = confirm_str(f"{prompt} [OK]", default_answer="")
 
 
 def json_dataclass(eq=True, init=True, **d_kwargs):

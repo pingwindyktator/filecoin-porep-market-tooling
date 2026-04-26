@@ -40,7 +40,7 @@ class SPRegistryProviderInfo(SPRegistryProvider):
     @staticmethod
     def from_web3(provider_id, data) -> "SPRegistryProviderInfo":
         if not Address(data[0]):
-            raise Exception("Provider not found")
+            raise RuntimeError("Provider not found")
 
         # noinspection PyArgumentList
         return SPRegistryProviderInfo(

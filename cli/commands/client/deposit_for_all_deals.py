@@ -10,7 +10,7 @@ from cli.services.contracts.porep_market import PoRepMarketDealState, PoRepMarke
 from cli.services.contracts.usdc_token import USDCToken
 
 
-# TODO LATER improve this
+# TODO LATER refactor this
 @click.command()
 @click.option("--months", type=click.IntRange(min=1), default=1, show_default=True,
               help="Number of months to calculate required deposit amount for.")
@@ -31,7 +31,7 @@ def _deposit_for_all_deals(months: int, from_private_key: PrivateKeyType):
 
 
 # deposits USDC funds to FileCoinPay account for X month of storing deals
-def __deposit_for_all_deals(deals: list[PoRepMarketDealProposal], months: int, from_private_key: PrivateKeyType) -> str | None:
+def __deposit_for_all_deals(deals: list[PoRepMarketDealProposal], months: int, from_private_key: PrivateKeyType):
     from_address = Address.from_private_key(from_private_key)
     filecoinpay_account = FileCoinPay().get_account(utils.get_env_required("USDC_TOKEN", required_type=Address), from_address)
 
@@ -54,18 +54,14 @@ def __deposit_for_all_deals(deals: list[PoRepMarketDealProposal], months: int, f
         permit_deadline = client_utils.get_permit_deadline()
 
         if token_balance < deposit_amount:
-            raise Exception(
-                f"Address {from_address} {token_name} balance {token_balance_str} {token_name} is "
-                f"less than required deposit {deposit_amount_str} for {len(deals)} deals")
+            raise click.ClickException(f"Address {from_address} {token_name} balance {token_balance_str} {token_name} is "
+                                       f"less than required deposit {deposit_amount_str} for {len(deals)} deals")
 
-        if not utils.ask_user_confirm(
-                f"\nDeposit {deposit_amount_str} {token_name} to FileCoinPay account for {len(deals)} deals from address {from_address}\n"
-                f"  Current token balance: {token_balance_str} {token_name}\n"
-                f"  Current FileCoinPay account available funds: {filecoinpay_available_funds_str} {token_name}\n"
-                f"  Total required funds for {len(deals)} deals for {months} months: {total_required_amount_str} {token_name}"):
-            #
-            click.echo("Canceled!\n")
-            return
+        click.confirm(
+            f"\nDeposit {deposit_amount_str} {token_name} to FileCoinPay account for {len(deals)} deals from address {from_address}\n"
+            f"  Current token balance: {token_balance_str} {token_name}\n"
+            f"  Current FileCoinPay account available funds: {filecoinpay_available_funds_str} {token_name}\n"
+            f"  Total required funds for {len(deals)} deals for {months} months: {total_required_amount_str} {token_name}", abort=True)
 
         click.echo()
         signed_msg = client_utils.sign_filecoinpay_permit(deposit_amount, permit_deadline, from_private_key)

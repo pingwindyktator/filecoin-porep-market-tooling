@@ -130,12 +130,12 @@ def print_info():
 
 def validate_address_matches_private_key(address: Address, private_key: PrivateKeyType | None):
     if not private_key:
-        raise Exception("Private key is not set")
+        raise click.ClickException("Private key is not set")
 
     derived_address = Address.from_private_key(private_key)
 
     if derived_address != address:
-        raise Exception(f"Address {address} does not match private key {utils.private_str_to_log_str(private_key)} (expected: {derived_address})")
+        raise click.ClickException(f"Address {address} does not match private key {utils.private_str_to_log_str(private_key)} (expected: {derived_address})")
 
 
 # retries = None means "ask user"
@@ -150,12 +150,12 @@ def fetch_manifest(manifest_url: str, show_manifest: bool | None = None, retries
             return _fetch_manifest(parsed_url, show_manifest, quiet)
         except requests.exceptions.RequestException as e:
             if retries is None:
-                if not utils.ask_user_confirm(f"\nFailed to fetch manifest:\n{e}.\nRetry?", default_answer=True):
-                    raise Exception(f"Network error while fetching manifest: {e}") from e
+                if not click.confirm(f"\nFailed to fetch manifest:\n{e}.\nRetry?", default=True):
+                    raise click.ClickException(f"Network error while fetching manifest: {e}") from e
 
             else:
                 if retries <= 0:
-                    raise Exception(f"Network error while fetching manifest: {e}") from e
+                    raise click.ClickException(f"Network error while fetching manifest: {e}") from e
                 else:
                     if not quiet:
                         click.echo(f"Retrying... ({retries} retries left)")
@@ -167,13 +167,13 @@ def _get_manifest_hostname(manifest_url: str) -> ParseResult:
     parsed = urlparse(manifest_url)
 
     if parsed.scheme not in ("http", "https") or not parsed.hostname:
-        raise ValueError("Manifest URL must use http/https")
+        raise click.ClickException("Manifest URL must use http/https")
 
     ip = socket.gethostbyname(parsed.hostname)
     addr = ipaddress.ip_address(ip)
 
     if addr.is_private or addr.is_loopback or addr.is_reserved or addr.is_link_local or addr.is_multicast:
-        raise ValueError(f"Manifest URL resolves to a disallowed IP address: {ip}")
+        raise click.ClickException(f"Manifest URL resolves to a disallowed IP address: {ip}")
 
     return parsed
 
@@ -188,13 +188,13 @@ def _fetch_manifest(parsed_url: ParseResult, show_manifest: bool | None = None, 
     try:
         manifest = resp.json()
     except ValueError as e:
-        raise ValueError(f"Manifest is not a valid JSON: {e}") from e
+        raise click.ClickException(f"Manifest is not a valid JSON: {e}") from e
 
     if not quiet:
         click.echo("Manifest downloaded")
 
     # show manifest
-    if show_manifest or (show_manifest is None and utils.ask_user_confirm("Show manifest?", default_answer=False)):
+    if show_manifest or (show_manifest is None and click.confirm("Show manifest?")):
         _manifest = utils.json_pretty(manifest)
         click.echo_via_pager("\n".join([f"{i + 1}. {line}" for i, line in enumerate(_manifest.splitlines())]))
         click.echo()
@@ -222,7 +222,7 @@ def _fetch_manifest(parsed_url: ParseResult, show_manifest: bool | None = None, 
                     "storagePath" in piece
                     for piece in manifest[0]["pieces"])
         ):
-            raise ValueError("Invalid manifest format")
+            raise click.ClickException("Invalid manifest format")
 
         # validate manifest pieces
         pieces = manifest[0]["pieces"]
@@ -230,20 +230,20 @@ def _fetch_manifest(parsed_url: ParseResult, show_manifest: bool | None = None, 
         dag_pieces = [piece for piece in pieces if piece["pieceType"] == "dag"]
 
         if len(pieces) <= 1 or len(data_pieces) != len(pieces) - 1 or len(dag_pieces) != 1:
-            raise ValueError("Invalid manifest pieces: must contain exactly one dag piece and at least one data piece")
+            raise click.ClickException("Invalid manifest pieces: must contain exactly one dag piece and at least one data piece")
 
         if not all(piece["preparationId"] == pieces[0]["preparationId"] for piece in pieces):
-            raise ValueError("Invalid preparationId in manifest pieces: must be the same for all pieces")
+            raise click.ClickException("Invalid preparationId in manifest pieces: must be the same for all pieces")
 
         if not all(piece["attachmentId"] == pieces[0]["attachmentId"] for piece in pieces):
-            raise ValueError("Invalid attachmentId in manifest pieces: must be the same for all pieces")
+            raise click.ClickException("Invalid attachmentId in manifest pieces: must be the same for all pieces")
 
         if dag_pieces[0]["pieceSize"] < MINIMUM_DAG_PIECE_SIZE_BYTES:
-            raise ValueError(f"Invalid dag piece size in manifest: must be at least 1 MiB "
-                             f"({dag_pieces[0]['pieceSize']} < {MINIMUM_DAG_PIECE_SIZE_BYTES} bytes)")
+            raise click.ClickException(f"Invalid dag piece size in manifest: must be at least 1 MiB "
+                                       f"({dag_pieces[0]['pieceSize']} < {MINIMUM_DAG_PIECE_SIZE_BYTES} bytes)")
         #
     except KeyError as e:
-        raise ValueError(f"Invalid manifest format: missing key {e}") from e
+        raise click.ClickException(f"Invalid manifest format: missing key {e}") from e
 
     # TODO return DealManifest type here
     return manifest

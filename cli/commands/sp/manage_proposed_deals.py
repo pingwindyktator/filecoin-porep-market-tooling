@@ -1,3 +1,5 @@
+import contextlib
+
 import click
 from eth_account.types import PrivateKeyType
 
@@ -18,21 +20,19 @@ def _manage_proposed_deals(from_private_key: PrivateKeyType, answer: str | None 
     click.echo(f"Found {len(deals)} proposed deals.")
 
     for deal in deals:
-        _answer = answer if answer else utils.ask_user_string(f"\nNew deal id {deal.deal_id}: {deal} ([a]ccept/[r]eject/[S]kip)",
-                                                              valid_answers=["accept", "reject", "skip", "a", "r", "s"],
-                                                              default_answer="skip")
+        _answer = answer if answer else utils.confirm_str(f"\nNew deal id {deal.deal_id}: {deal} ([a]ccept/[r]eject/[S]kip)",
+                                                          valid_answers=["accept", "reject", "skip", "a", "r", "s"],
+                                                          default_answer="skip")
 
-        if _answer in ["accept", "a"]:
-            sp_utils.accept_deal(deal, from_private_key)
+        with contextlib.suppress(click.Abort, click.ClickException):
+            if _answer in ["accept", "a"]:
+                sp_utils.accept_deal(deal, from_private_key)
 
-        elif _answer in ["reject", "r"]:
-            sp_utils.reject_deal(deal, from_private_key)
+            elif _answer in ["reject", "r"]:
+                sp_utils.reject_deal(deal, from_private_key)
 
-        elif _answer in ["skip", "s"]:
-            continue
-
-        else:
-            raise ValueError(f"Invalid answer: {_answer}")
+            elif _answer in ["skip", "s"]:
+                continue
 
     click.echo("\n\nAll done!")
 

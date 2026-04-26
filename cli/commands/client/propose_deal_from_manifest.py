@@ -29,7 +29,7 @@ def _propose_deal_from_manifest(manifest_url: str,
     pieces_size_bytes = sum(piece["pieceSize"] for piece in pieces)
 
     if pieces_size_bytes <= 0:
-        raise Exception("Invalid deal size")
+        raise ValueError("Invalid deal size")
 
     click.echo(f"Found {len(pieces)} pieces with size {pieces_size_bytes} bytes "
                f"({humanfriendly.format_size(pieces_size_bytes)} = {humanfriendly.format_size(pieces_size_bytes, binary=True)} = "
@@ -58,24 +58,18 @@ def _propose_deal_from_manifest(manifest_url: str,
 
     # warn if any of existing client deals looks similar to the new deal proposal
     for existing_deal in existing_deals:
-        is_active = existing_deal.state in [PoRepMarketDealState.PROPOSED, PoRepMarketDealState.ACCEPTED]
+        is_active = existing_deal.state in [PoRepMarketDealState.PROPOSED, PoRepMarketDealState.ACCEPTED, PoRepMarketDealState.COMPLETED]
 
         if deal.terms.deal_size_bytes == existing_deal.terms.deal_size_bytes:
-            if not utils.ask_user_confirm(f"\nWarning: Client deal with the same deal size "
-                                          f"already exists in PoRep Market: {utils.json_pretty(existing_deal)} "
-                                          "Continue?", default_answer=not is_active):
-                #
-                click.echo("Canceled!\n")
-                return
+            click.confirm(f"\nWarning: Client deal with the same deal size "
+                          f"already exists in PoRep Market: {utils.json_pretty(existing_deal)} "
+                          "Continue?", default=not is_active, abort=True)
 
         if deal.manifest_location == existing_deal.manifest_location:
-            if not utils.ask_user_confirm(
-                    f"\nWarning: Client deal with the same manifest location "
-                    f"already exists in PoRep Market: {utils.json_pretty(existing_deal)} "
-                    "Continue?", default_answer=not is_active):
-                #
-                click.echo("Canceled!\n")
-                return
+            click.confirm(
+                f"\nWarning: Client deal with the same manifest location "
+                f"already exists in PoRep Market: {utils.json_pretty(existing_deal)} "
+                "Continue?", default=not is_active, abort=True)
 
     token_name = USDCToken().name()
     deal_duration_months = deal.terms.duration_days // 30  # PoRep Market smart contracts assumes month == 30 days
@@ -87,12 +81,10 @@ def _propose_deal_from_manifest(manifest_url: str,
     total_max_cost_str = utils.str_from_wei(total_max_cost, USDCToken().decimals())
 
     # TODO LATER print account info (you now have ... at address ...)
-    if not utils.ask_user_confirm(f"\nProposing deal: {utils.json_pretty(deal)}"
-                                  f" This will cost you maximum of {max_cost_per_month_str} {token_name} per month. "
-                                  f"This is a total of {total_max_cost_str} {token_name} for {duration_months} months. "
-                                  f"Continue?"):
-        click.echo("Canceled!\n")
-        return
+    click.confirm(f"\nProposing deal: {utils.json_pretty(deal)}"
+                  f" This will cost you maximum of {max_cost_per_month_str} {token_name} per month. "
+                  f"This is a total of {total_max_cost_str} {token_name} for {duration_months} months. "
+                  f"Continue?", abort=True)
 
     tx_hash = PoRepMarket().propose_deal(deal, from_private_key)
     click.echo(f"Created deal proposal from manifest {manifest_url}: {tx_hash}")

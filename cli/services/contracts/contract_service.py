@@ -50,7 +50,7 @@ class Address(str):
         response = ContractService.get_w3().provider.make_request(RPCEndpoint(method), [self])
 
         if "error" in response:
-            raise Exception(response["error"])
+            raise RuntimeError(response["error"])
 
         return response["result"]
 
@@ -59,10 +59,10 @@ class Address(str):
         response = ContractService.get_w3().provider.make_request(RPCEndpoint(method), [self.to_filecoin_address(), None])
 
         if "error" in response:
-            raise Exception(response["error"])
+            raise RuntimeError(response["error"])
 
         if not response["result"]:
-            raise Exception(f"Failed to get actor ID for address {self}: empty result")
+            raise RuntimeError(f"Failed to get actor ID for address {self}: empty result")
 
         return utils.f0_str_id_to_int(response["result"])
 
@@ -81,7 +81,7 @@ class Address(str):
         )
 
         if "error" in response:
-            raise Exception(response["error"])
+            raise RuntimeError(response["error"])
 
         if not response["result"] or not Web3.is_address(response["result"]):
             raise ValueError(f"Invalid response for FilecoinAddressToEthAddress: {response['result']}")
@@ -190,7 +190,7 @@ class ContractService:
 
             # this call should revert with the same error as the transaction
             reason = self.w3.eth.call({"to": tx["to"], "from": tx["from"], "data": tx["input"]}, receipt["blockNumber"])
-            raise Exception(f"Transaction reverted (reason unknown, call returned: {reason.hex() if reason else 'empty'})")
+            raise click.ClickException(f"Transaction reverted (reason unknown, call returned: {reason.hex() if reason else 'empty'})")
 
         # tx succeeded
         self.logger.warning(f"Transaction succeeded: {tx_hash.to_0x_hex()}: {ContractService.tx_to_log_string(transaction, tx_params)}")
@@ -209,17 +209,17 @@ class ContractService:
 
             _dry_run = is_dry_run()
 
-            if not utils.ask_user_confirm(f"\n== DRY RUN: {_dry_run}\n"
-                                          f"== Chain ID: {tx_params['chainId']}\n"
-                                          f"== Transaction:\n"
-                                          f"==   from: {tx_params['from']}\n"
-                                          f"==   to: {tx_params['to']}\n"
-                                          f"==   signature: {transaction.signature}\n"
-                                          f"==   nonce: {tx_params['nonce']}\n"
-                                          f"==   gas price: {self.w3.eth.gas_price} wei\n"
-                                          f"==   gas: {tx_params['gas']}\n"
-                                          f"==   value: {tx_params['value']} wei\n"
-                                          f"== This is the final confirmation", default_answer=_dry_run):
+            if not click.confirm(f"\n== DRY RUN: {_dry_run}\n"
+                                 f"== Chain ID: {tx_params['chainId']}\n"
+                                 f"== Transaction:\n"
+                                 f"==   from: {tx_params['from']}\n"
+                                 f"==   to: {tx_params['to']}\n"
+                                 f"==   signature: {transaction.signature}\n"
+                                 f"==   nonce: {tx_params['nonce']}\n"
+                                 f"==   gas price: {self.w3.eth.gas_price} wei\n"
+                                 f"==   gas: {tx_params['gas']}\n"
+                                 f"==   value: {tx_params['value']} wei\n"
+                                 f"== This is the final confirmation", default=_dry_run):
                 click.echo("Enabling dry-run mode. This transaction WILL NOT be executed.")
                 _dry_run = True
 
@@ -228,7 +228,7 @@ class ContractService:
         except ContractCustomError as cce:
             reason = self.__decode_contract_error_name(cce)
             self.logger.error(f"Transaction reverted with error: {reason}: {ContractService.tx_to_log_string(transaction, tx_params)}")
-            raise Exception(f"Transaction reverted with error: {reason}") from cce
+            raise click.ClickException(f"Transaction reverted with error: {reason}") from cce
         except Web3RPCError as rpc_err:
             reason = rpc_err.rpc_response["error"]["message"] if (rpc_err.rpc_response and
                                                                   "error" in rpc_err.rpc_response and
@@ -236,11 +236,11 @@ class ContractService:
                                                                   rpc_err.rpc_response["error"]["message"]) else str(rpc_err)
 
             self.logger.error(f"Web3 RPC error: {reason}: {ContractService.tx_to_log_string(transaction, tx_params)}")
-            raise Exception(f"Web3 RPC error: {reason}") from rpc_err
+            raise RuntimeError(f"Web3 RPC error: {reason}") from rpc_err
         except Exception as e:
             reason = str(e)
             self.logger.error(f"Transaction failed: {reason}: {ContractService.tx_to_log_string(transaction, tx_params)}")
-            raise Exception(f"Transaction failed: {reason}") from e
+            raise click.ClickException(f"Transaction failed: {reason}") from e
 
     @staticmethod
     def tx_to_log_string(transaction, tx_params: dict | None) -> str:
@@ -307,4 +307,4 @@ class ContractService:
             return pending_nonce
 
         except Exception as e:
-            raise Exception(f"Failed to get nonce for address {from_address}: {str(e)}") from e
+            raise RuntimeError(f"Failed to get nonce for address {from_address}: {str(e)}") from e

@@ -25,7 +25,7 @@ def _make_allocation(deal_id: int,
     deal = PoRepMarket().get_deal_proposal(deal_id)
 
     if deal.state != PoRepMarketDealState.ACCEPTED:
-        raise Exception(f"Deal id {deal_id} is not in ACCEPTED state")
+        raise click.ClickException(f"Deal id {deal_id} is not in ACCEPTED state")
 
     manifest = commands_utils.fetch_manifest(deal.manifest_location, show_manifest=False)
     pieces = manifest[0]["pieces"]

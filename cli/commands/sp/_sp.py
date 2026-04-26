@@ -28,7 +28,7 @@ def sp(address: str | None = None, private_key: str | None = None, confirm_info:
 
     if confirm_info:
         _info()
-        utils.ask_user_confirm_or_fail("\n\nContinue?", default_answer=True)
+        click.confirm("\n\nContinue?", default=True, abort=True)
         click.echo("\n\n")
 
 
@@ -40,7 +40,7 @@ def sp_address() -> Address:
         if SP_PRIVATE_KEY:
             SP_ADDRESS = w3.eth.account.from_key(SP_PRIVATE_KEY).address
         else:
-            raise Exception("Neither SP address nor private key is set")
+            raise click.ClickException("Neither SP address nor private key is set")
 
     assert SP_ADDRESS
     return Address(SP_ADDRESS)

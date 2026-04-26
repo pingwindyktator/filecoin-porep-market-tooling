@@ -3,9 +3,9 @@ import click
 from cli import utils
 from cli.commands import utils as commands_utils
 from cli.commands.utils import ManifestPiece
+from cli.services.contracts import rpc_utils
 from cli.services.contracts.client_contract import ClientContract
 from cli.services.contracts.porep_market import PoRepMarket
-from cli.services.contracts.rpc_utils import RPCUtils
 
 
 # pylint: disable=invalid-name
@@ -42,7 +42,7 @@ def get_allocations(deal_id: int):
 
     client_contract = ClientContract()
     client_allocations = client_contract.get_client_allocation_ids_per_deal(deal_id)
-    state_allocations = RPCUtils.state_get_allocations(client_contract.actor_id())
+    state_allocations = rpc_utils.state_get_allocations(client_contract.actor_id())
     aggregated_allocations = aggregate_allocations(state_allocations, client_allocations, pieces)
 
     click.echo(utils.json_pretty(aggregated_allocations))

@@ -28,7 +28,7 @@ def client(address: str | None = None, private_key: str | None = None, confirm_i
 
     if confirm_info:
         _info()
-        utils.ask_user_confirm_or_fail("\n\nContinue?", default_answer=True)
+        click.confirm("\n\nContinue?", default=True, abort=True)
         click.echo("\n\n")
 
 
@@ -40,7 +40,7 @@ def client_address() -> Address:
         if CLIENT_PRIVATE_KEY:
             CLIENT_ADDRESS = w3.eth.account.from_key(CLIENT_PRIVATE_KEY).address
         else:
-            raise Exception("Neither client address nor private key is set")
+            raise click.ClickException("Neither client address nor private key is set")
 
     assert CLIENT_ADDRESS
     return Address(CLIENT_ADDRESS)

@@ -35,7 +35,7 @@ class PoRepMarketDealState(enum.Enum):
         elif s == "terminated":
             return PoRepMarketDealState.TERMINATED
         else:
-            raise Exception(f"Invalid deal state: {s}")
+            raise ValueError(f"Invalid deal state: {s}")
 
     @staticmethod
     def to_string_list():
@@ -90,10 +90,10 @@ class PoRepMarketDealProposal(PoRepMarketDealRequest):
     @staticmethod
     def from_web3(data, expected_deal_id: int | None = None) -> "PoRepMarketDealProposal":
         if not Address(data[1]):
-            raise Exception("Deal not found")
+            raise RuntimeError("Deal not found")
 
         if expected_deal_id is not None and expected_deal_id != data[0]:
-            raise Exception(f"Invalid deal proposal returned from contract. Expected deal_id {expected_deal_id}, got {data[0]}")
+            raise RuntimeError(f"Invalid deal proposal returned from contract. Expected deal_id {expected_deal_id}, got {data[0]}")
 
         # noinspection PyArgumentList
         return PoRepMarketDealProposal(

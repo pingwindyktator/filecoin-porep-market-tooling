@@ -14,15 +14,15 @@ def __update_provider_params(provider: SPRegistryProvider | SPRegistryProviderIn
                              from_private_key: PrivateKeyType):
     #
     if provider.organization_address != registered_info.organization_address:
-        raise Exception(f"Organization address cannot be updated for provider {utils.int_id_to_f0_str(provider.provider_id)}")
+        raise RuntimeError(f"Organization address cannot be updated for provider {utils.int_id_to_f0_str(provider.provider_id)}")
 
     if (provider.max_deal_duration_days, provider.min_deal_duration_days) != (registered_info.max_deal_duration_days, registered_info.min_deal_duration_days):
         _different_parameters = {k: v for k, v in different_parameters.items() if k in ["max_deal_duration_days", "min_deal_duration_days"]}
 
-        if utils.ask_user_confirm(
+        if click.confirm(
                 f"Updating (max_deal_duration_days, min_deal_duration_days) for provider {utils.int_id_to_f0_str(provider.provider_id)}: "
                 f"{_different_parameters}",
-                default_answer=True):
+                default=True):
             #
             tx_hash = SPRegistry().set_deal_duration_limits(provider.provider_id,
                                                             provider.min_deal_duration_days,
@@ -35,10 +35,10 @@ def __update_provider_params(provider: SPRegistryProvider | SPRegistryProviderIn
             click.echo("Skipped this parameter\n")
 
     if provider.price_per_sector_per_month != registered_info.price_per_sector_per_month:
-        if utils.ask_user_confirm(
+        if click.confirm(
                 f"Updating price_per_sector_per_month for provider {utils.int_id_to_f0_str(provider.provider_id)}: "
                 f"{different_parameters['price_per_sector_per_month']}",
-                default_answer=True):
+                default=True):
             #
             tx_hash = SPRegistry().set_price(provider.provider_id,
                                              provider.price_per_sector_per_month,
@@ -50,10 +50,10 @@ def __update_provider_params(provider: SPRegistryProvider | SPRegistryProviderIn
             click.echo("Skipped this parameter\n")
 
     if provider.capabilities != registered_info.capabilities:
-        if utils.ask_user_confirm(
+        if click.confirm(
                 f"\nUpdating capabilities for provider {utils.int_id_to_f0_str(provider.provider_id)}: "
                 f"{different_parameters['capabilities']}",
-                default_answer=True):
+                default=True):
             #
             tx_hash = SPRegistry().set_capabilities(provider.provider_id,
                                                     provider.capabilities,
@@ -65,10 +65,10 @@ def __update_provider_params(provider: SPRegistryProvider | SPRegistryProviderIn
             click.echo("Skipped this parameter\n")
 
     if provider.payee_address != registered_info.payee_address:
-        if utils.ask_user_confirm(
+        if click.confirm(
                 f"Updating payee_address for provider {utils.int_id_to_f0_str(provider.provider_id)}: "
                 f"{different_parameters['payee_address']}",
-                default_answer=True):
+                default=True):
             #
             tx_hash = SPRegistry().set_payee(provider.provider_id,
                                              provider.payee_address,
@@ -80,10 +80,10 @@ def __update_provider_params(provider: SPRegistryProvider | SPRegistryProviderIn
             click.echo("Skipped this parameter\n")
 
     if provider.available_bytes != registered_info.available_bytes:
-        if utils.ask_user_confirm(
+        if click.confirm(
                 f"Updating available_bytes for provider {utils.int_id_to_f0_str(provider.provider_id)}: "
                 f"{different_parameters['available_bytes']}",
-                default_answer=True):
+                default=True):
             #
             tx_hash = SPRegistry().update_available_space(provider.provider_id,
                                                           provider.available_bytes,
@@ -123,9 +123,9 @@ def _register_sps(providers: list[SPRegistryProvider], from_private_key: Private
                 #
                 continue
 
-            if not utils.ask_user_confirm(f"\nProvider {utils.int_id_to_f0_str(provider.provider_id)} already registered with different parameters\n"
-                                          f"Do you want to update provider {utils.int_id_to_f0_str(provider.provider_id)} parameters?\n"
-                                          f"{utils.json_pretty(different_parameters)}"):
+            if not click.confirm(f"\nProvider {utils.int_id_to_f0_str(provider.provider_id)} already registered with different parameters\n"
+                                 f"Do you want to update provider {utils.int_id_to_f0_str(provider.provider_id)} parameters?\n"
+                                 f"{utils.json_pretty(different_parameters)}"):
                 #
                 click.echo("Skipped this provider")
                 continue
@@ -135,13 +135,13 @@ def _register_sps(providers: list[SPRegistryProvider], from_private_key: Private
         else:
             # register provider with given parameters
 
-            if not utils.ask_user_confirm(f"\nRegistering Storage Provider with parameters: {provider}", default_answer=True):
+            if not click.confirm(f"\nRegistering Storage Provider with parameters: {provider}", default=True):
                 click.echo("Skipped this provider")
                 continue
 
-            if not utils.ask_user_confirm(f"\nThe organization_address {provider.organization_address} cannot be changed "
-                                          f"once registered for provider_id {utils.int_id_to_f0_str(provider.provider_id)}. Are you sure this is correct?",
-                                          default_answer=False):
+            if not click.confirm(f"\nThe organization_address {provider.organization_address} cannot be changed "
+                                 f"once registered for provider_id {utils.int_id_to_f0_str(provider.provider_id)}. Are you sure this is correct?"):
+                #
                 click.echo("Skipped this provider")
                 continue
 

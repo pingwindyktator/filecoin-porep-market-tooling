@@ -20,10 +20,6 @@ def get_deals(state: str | None = None, provider_id: str | None = None, deal_id:
 
     if deal_id is not None:
         _result = PoRepMarket().get_deal_proposal(deal_id)
-
-        if not _result:
-            raise Exception(f"Deal id {deal_id} not found")
-
         result = [_result]
     else:
         _state = PoRepMarketDealState.from_string(state)
@@ -31,10 +27,6 @@ def get_deals(state: str | None = None, provider_id: str | None = None, deal_id:
 
         if _provider_id:
             provider_info = SPRegistry().get_provider_info(_provider_id)
-
-            if not provider_info:
-                raise Exception(f"Provider {_provider_id} not found")
-
             organization_address = provider_info.organization_address
         else:
             organization_address = sp_address()

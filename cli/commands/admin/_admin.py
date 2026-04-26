@@ -28,7 +28,7 @@ def admin(address: str | None = None, private_key: str | None = None, confirm_in
 
     if confirm_info:
         _info()
-        utils.ask_user_confirm_or_fail("\n\nContinue?", default_answer=True)
+        click.confirm("\n\nContinue?", default=True, abort=True)
         click.echo("\n\n")
 
 
@@ -40,7 +40,7 @@ def admin_address() -> Address:
         if ADMIN_PRIVATE_KEY:
             ADMIN_ADDRESS = w3.eth.account.from_key(ADMIN_PRIVATE_KEY).address
         else:
-            raise Exception("Neither admin address nor private key is set")
+            raise click.ClickException("Neither admin address nor private key is set")
 
     assert ADMIN_ADDRESS
     return Address(ADMIN_ADDRESS)

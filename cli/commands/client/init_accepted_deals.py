@@ -1,4 +1,3 @@
-import contextlib
 import sys
 
 import click
@@ -39,12 +38,13 @@ def _init_accepted_deals(deal_id: int | None = None):
         accepted_deals = [PoRepMarket().get_deal_proposal(deal_id)]
     else:
         accepted_deals = client_utils.get_client_deals(PoRepMarketDealState.ACCEPTED)
-        click.echo(f"Found {len(accepted_deals)} accepted deals for client_address {client_address()}\n")
+        click.echo(f"Found {len(accepted_deals)} accepted deals for client address {client_address()}\n")
 
     for deal in accepted_deals:
-        click.echo(f"\nDeal id {deal.deal_id}: {utils.json_pretty(deal)}\n")
+        assert deal.deal_id
+        click.echo(f"\nDeal id {deal.deal_id}: {utils.json_pretty(deal)}")
 
-        with contextlib.suppress(click.Abort, click.ClickException):
+        try:
             _deploy_and_set_validator(deal.deal_id)
             ContractService.wait_for_pending_transactions(client_address())
 
@@ -53,12 +53,18 @@ def _init_accepted_deals(deal_id: int | None = None):
 
             _initialize_rail(deal.deal_id)
             ContractService.wait_for_pending_transactions(client_address())
+        except click.ClickException as e:
+            e.show()
+            continue
+        except click.Abort:
+            click.echo("\nSkipped this deal.")
+            continue
 
     click.echo("\n\nAll done!")
     click.echo(f"\nRun {sys.argv[0]} client deposit-for-all-deals to make sure you have enough FileCoinPay funds deposited for all your accepted deals")
 
 
-def _deploy_and_set_validator(deal_id: int) -> str:
+def _deploy_and_set_validator(deal_id: int):
     deal = PoRepMarket().get_deal_proposal(deal_id)
 
     if not deal:
@@ -71,17 +77,16 @@ def _deploy_and_set_validator(deal_id: int) -> str:
         raise click.ClickException(f"Deal id {deal.deal_id} is not in ACCEPTED state")
 
     if __get_validator_address_for_deal(deal):
-        raise click.ClickException(f"Validator already set for deal id {deal.deal_id}: {deal.validator_address}")
+        click.echo(f"\nValidator already set for deal id {deal.deal_id}: {deal.validator_address}")
+        return
 
-    click.confirm(f"Deploy and set validator for deal id {deal.deal_id}?", default=True, abort=True)
+    click.confirm(f"\nDeploy and set validator for deal id {deal.deal_id}?", default=True, abort=True)
 
     tx_hash = ValidatorFactory().create(deal.deal_id, client_private_key())
-
     click.echo(f"Validator deployed for deal id {deal.deal_id}: {tx_hash}")
-    return tx_hash
 
 
-def _deposit_and_approve_operator(deal_id: int) -> str:
+def _deposit_and_approve_operator(deal_id: int):
     deal = PoRepMarket().get_deal_proposal(deal_id)
 
     if not deal:
@@ -95,7 +100,8 @@ def _deposit_and_approve_operator(deal_id: int) -> str:
                                                             deal.validator_address)
 
     if operator_approval.is_approved:
-        raise click.ClickException(f"Operator already approved for deal id {deal.deal_id}: {operator_approval}")
+        click.echo(f"\nOperator already approved for deal id {deal.deal_id}: {operator_approval}")
+        return
 
     token_decimals = USDCToken().decimals()
     token_name = USDCToken().name()
@@ -149,10 +155,9 @@ def _deposit_and_approve_operator(deal_id: int) -> str:
                                                                      client_private_key())
 
     click.echo(f"Deposited {deposit_amount_str} {token_name} and operator approved for deal id {deal.deal_id}: {tx_hash}")
-    return tx_hash
 
 
-def _initialize_rail(deal_id: int) -> str:
+def _initialize_rail(deal_id: int):
     deal = PoRepMarket().get_deal_proposal(deal_id)
 
     if not deal:
@@ -169,14 +174,14 @@ def _initialize_rail(deal_id: int) -> str:
         raise click.ClickException(f"Operator not approved for deal id {deal.deal_id}, cannot initialize rail")
 
     if deal.rail_id:
-        raise click.ClickException(f"Rail already initialized for deal id {deal.deal_id}: {deal.rail_id}")
+        click.echo(f"\nRail already initialized for deal id {deal.deal_id}: {deal.rail_id}")
+        return
 
-    click.confirm(f"Initialize FileCoinPay rail for deal id {deal.deal_id}?", default=True, abort=True)
+    click.confirm(f"\nInitialize FileCoinPay rail for deal id {deal.deal_id}?", default=True, abort=True)
 
     tx_hash = FileCoinPayValidator(deal.validator_address).create_rail(utils.get_env_required("USDC_TOKEN", required_type=Address), client_private_key())
 
     click.echo(f"FileCoinPay rail initialized for deal id {deal.deal_id}: {tx_hash}")
-    return tx_hash
 
 
 def __get_validator_address_for_deal(deal: PoRepMarketDealProposal) -> str:

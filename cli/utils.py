@@ -5,7 +5,6 @@ import os
 from typing import TypeVar, Callable
 
 from dotenv import load_dotenv
-from eth_account.types import PrivateKeyType
 
 load_dotenv(dotenv_path=None)
 
@@ -147,7 +146,7 @@ def int_from_bytes(xbytes: bytes) -> int:
     return int.from_bytes(xbytes, "big")
 
 
-def private_str_to_log_str(private_str: str | PrivateKeyType | None) -> str:
+def private_str_to_log_str(private_str) -> str:
     if not private_str:
         return ""
 

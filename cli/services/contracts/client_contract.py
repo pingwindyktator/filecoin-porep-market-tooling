@@ -8,12 +8,13 @@ from cli.services.contracts.contract_service import ContractService, Address
 
 @utils.json_dataclass()
 class TransferParams:
-    to: Address
-    amount: int
-    operator_data: str
+    # pylint: disable=invalid-name
+    FilAddress = tuple[bytes]
+    BigInt = tuple[bytes, bool]
 
-    def __post_init__(self):
-        self.to = Address(self.to)
+    to: FilAddress
+    amount: BigInt
+    operator_data: bytes
 
 
 class ClientContract(ContractService):
@@ -28,7 +29,8 @@ class ClientContract(ContractService):
     # @dev Reverts with InvalidAmount when parsing amount from BigInt to uint256 failed
     # @dev Reverts with UnfairDistribution when trying to give too much to single SP
     def transfer(self, transfer_params: TransferParams, deal_id: int, deal_completed: bool, from_private_key: PrivateKeyType) -> str:
-        return self.sign_and_send_tx(self.contract.functions.transfer(transfer_params, deal_id, deal_completed), from_private_key)
+        return self.sign_and_send_tx(self.contract.functions.transfer((transfer_params.to, transfer_params.amount, transfer_params.operator_data),
+                                                                      deal_id, deal_completed), from_private_key)
 
     # @notice custom getter to retrieve allocation ids per client and provider
     # @param dealId the id of the deal

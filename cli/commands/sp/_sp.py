@@ -6,6 +6,7 @@ from cli.commands import utils as commands_utils
 from cli.services.contracts.contract_service import Address, ContractService
 
 SP_ORGANIZATION: str | None = None
+SP_ORGANIZATION_ADDRESS: str | None = None
 SP_PRIVATE_KEY: str | None = None
 
 
@@ -31,11 +32,30 @@ def sp(private_key: str | None = None, organization: str | None = None, confirm_
         click.echo("\n\n")
 
 
+# lazy initialization
 def sp_organization_address() -> Address:
     if not SP_ORGANIZATION:
         raise click.ClickException("SP organization is not set")
 
-    return Address(SP_ORGANIZATION)
+    global SP_ORGANIZATION_ADDRESS
+
+    if not SP_ORGANIZATION_ADDRESS:
+        if Address.is_filecoin_address(SP_ORGANIZATION):
+            SP_ORGANIZATION_ADDRESS = str(Address.from_filecoin_address(SP_ORGANIZATION))
+
+            if not click.confirm(f"Converted SP organization {SP_ORGANIZATION} Filecoin f-address "
+                                 f"to EVM 0x-address {SP_ORGANIZATION_ADDRESS}. "
+                                 f"Continue?",
+                                 default=True):
+                raise click.Abort()
+            else:
+                click.echo(f"Set SP organization to {SP_ORGANIZATION_ADDRESS} to avoid this prompt next time")
+                click.echo("\n")
+        else:
+            SP_ORGANIZATION_ADDRESS = SP_ORGANIZATION
+
+    assert SP_ORGANIZATION_ADDRESS
+    return Address(SP_ORGANIZATION_ADDRESS)
 
 
 # returns SP's wallet address which might be different that sp_organization()
@@ -55,8 +75,8 @@ def sp_private_key() -> PrivateKeyType:
 
 
 def _info():
-    click.echo(f"SP organization: {SP_ORGANIZATION if SP_ORGANIZATION else ''}")
     click.echo(f"SP organization address: {sp_organization_address() if SP_ORGANIZATION else ''}")
+    click.echo(f"SP organization: {SP_ORGANIZATION if SP_ORGANIZATION else ''}")
     click.echo(f"SP wallet address: {sp_address() if SP_PRIVATE_KEY else ''}")
     click.echo(f"SP wallet private key: {utils.private_str_to_log_str(SP_PRIVATE_KEY)}")
     click.echo()

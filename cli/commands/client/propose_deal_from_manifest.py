@@ -31,8 +31,8 @@ def _propose_deal_from_manifest(manifest_url: str,
     if pieces_size_bytes <= 0:
         raise ValueError("Invalid deal size")
 
-    click.echo(f"Found {len(pieces)} pieces with size {pieces_size_bytes} bytes "
-               f"({humanfriendly.format_size(pieces_size_bytes)} = {humanfriendly.format_size(pieces_size_bytes, binary=True)} = "
+    click.echo(f"\nFound {len(pieces)} pieces with size {pieces_size_bytes} bytes "
+               f"(= {humanfriendly.format_size(pieces_size_bytes)} = {humanfriendly.format_size(pieces_size_bytes, binary=True)} = "
                f"{commands_utils.bytes_to_sectors(pieces_size_bytes)} sectors) "
                f"(including dag piece)")
 

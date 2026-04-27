@@ -236,7 +236,7 @@ class ContractService:
                                                                   rpc_err.rpc_response["error"]["message"]) else str(rpc_err)
 
             self.logger.error(f"Web3 RPC error: {reason}: {ContractService.tx_to_log_string(transaction, tx_params)}")
-            raise RuntimeError(f"Web3 RPC error: {reason}") from rpc_err
+            raise click.ClickException(f"Web3 RPC error: {reason}") from rpc_err
         except Exception as e:
             reason = str(e)
             self.logger.error(f"Transaction failed: {reason}: {ContractService.tx_to_log_string(transaction, tx_params)}")
@@ -305,6 +305,14 @@ class ContractService:
                 pending_nonce = w3.eth.get_transaction_count(from_address, "pending")
 
             return pending_nonce
+
+        except Web3RPCError as rpc_err:
+            reason = rpc_err.rpc_response["error"]["message"] if (rpc_err.rpc_response and
+                                                                  "error" in rpc_err.rpc_response and
+                                                                  "message" in rpc_err.rpc_response["error"] and
+                                                                  rpc_err.rpc_response["error"]["message"]) else str(rpc_err)
+
+            raise RuntimeError(f"Web3 RPC error while getting nonce for address {from_address}: {reason}") from rpc_err
 
         except Exception as e:
             raise RuntimeError(f"Failed to get nonce for address {from_address}: {str(e)}") from e

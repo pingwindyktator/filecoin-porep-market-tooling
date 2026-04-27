@@ -52,7 +52,7 @@ def __update_provider_params(provider: SPRegistryProvider | SPRegistryProviderIn
     if provider.capabilities != registered_info.capabilities:
         if click.confirm(
                 f"\nUpdating capabilities for provider {utils.int_id_to_f0_str(provider.provider_id)}: "
-                f"{different_parameters['capabilities']}",
+                f"{utils.json_pretty(different_parameters['capabilities'])}",
                 default=True):
             #
             tx_hash = SPRegistry().set_capabilities(provider.provider_id,

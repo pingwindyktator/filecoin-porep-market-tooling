@@ -1,5 +1,3 @@
-import contextlib
-
 import click
 
 from cli import utils
@@ -21,7 +19,7 @@ def _manage_proposed_deals(answer: str | None = None):
                                                           valid_answers=["accept", "reject", "skip", "a", "r", "s"],
                                                           default_answer="skip")
 
-        with contextlib.suppress(click.Abort, click.ClickException):
+        try:
             if _answer in ["accept", "a"]:
                 click.echo()
                 sp_utils.accept_deal(deal)
@@ -32,6 +30,12 @@ def _manage_proposed_deals(answer: str | None = None):
 
             elif _answer in ["skip", "s"]:
                 continue
+        except click.ClickException as e:
+            e.show()
+            continue
+        except click.Abort:
+            click.echo("\nSkipped this deal.")
+            continue
 
     click.echo("\n\nAll done!")
 

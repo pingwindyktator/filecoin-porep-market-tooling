@@ -10,7 +10,7 @@ from cli.services.contracts.filecoin_pay import FileCoinPay
 @click.command()
 @click.option("--token-address", envvar="USDC_TOKEN", show_envvar=True, required=True,
               help="ERC20 token address to ask for.")
-def get_filecoin_pay_account(token_address: str):
+def get_filecoinpay_account(token_address: str):
     """
     Get client's FileCoinPay account for the organization and token address.
     Note: PoRep Market currently supports USDC only.
@@ -18,13 +18,22 @@ def get_filecoin_pay_account(token_address: str):
 
     _token_address = Address(token_address)
     token_contract = ERC20Contract(_token_address)
+    token_name = token_contract.name()
+    token_decimals = token_contract.decimals()
     account = FileCoinPay().get_account(_token_address, client_address())
 
     click.echo(utils.json_pretty(
         {
             "owner": str(client_address()),
-            "token": _token_address,
-            "funds": f"{utils.str_from_wei(account.funds, token_contract.decimals())} {token_contract.name()}",
-            "account": account.__dict__
+            "token": {
+                "address": str(_token_address),
+                "name": token_name,
+                "decimals": token_decimals,
+                "balance": f"{utils.str_from_wei(token_contract.balance_of(client_address()), token_decimals)} {token_name}"
+            },
+            "account": {
+                "funds": f"{utils.str_from_wei(account.funds, token_decimals)} {token_name}",
+                "account": account.__dict__
+            }
         }
     ))

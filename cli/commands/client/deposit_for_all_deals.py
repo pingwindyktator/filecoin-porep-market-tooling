@@ -11,11 +11,12 @@ from cli.services.contracts.usdc_token import USDCToken
 
 # TODO LATER refactor this
 @click.command()
-@click.option("--months", type=click.IntRange(min=1), default=1, show_default=True,
-              help="Number of months to calculate required deposit amount for.")
+@click.argument("months", type=click.IntRange(min=1), default=1)
 def deposit_for_all_deals(months: int):
     """
     Deposit USDC funds to FileCoinPay account for all accepted deals.
+
+    MONTHS - Number of months to calculate required deposit amount for. [default: 1; x>=1]
     """
 
     _deposit_for_all_deals(months)

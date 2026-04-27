@@ -139,11 +139,10 @@ def get_db_sps(db_url: str,
             _MOCK_F_ORG_ADDR = utils.get_env_required("_MOCK_F_ORG_ADDR", default="", required_type=Address).strip().lower()
             organization_address = Address(_MOCK_F_ORG_ADDR) if _MOCK_F_ORG_ADDR else Address.from_filecoin_address(org.organization_address)
 
-            if not click.confirm(
-                    f"Converted organization {org.organization_address} [db_id {org.id}] Filecoin f-organization_address "
-                    f"{org.organization_address} to EVM 0x-address {organization_address}. "
-                    f"Return SPs from this organization?",
-                    default=True):
+            if not click.confirm(f"Converted organization {org.organization_address} [db_id {org.id}] Filecoin f-address "
+                                 f"to EVM 0x-address {organization_address}. "
+                                 f"Return SPs from this organization?",
+                                 default=True):
                 continue
         else:
             organization_address = org.organization_address

@@ -1,107 +1,65 @@
-# pylint: disable=broad-exception-caught
-
 import json
 import logging
 
 import click
 import eth_abi
-from cli.services import rpc_utils
-from cli.services.web3_service import Web3Service
 from eth_account.datastructures import SignedTransaction
 from eth_account.types import PrivateKeyType
 from eth_typing import ABIElement
 from hexbytes import HexBytes
-from web3 import Web3
 from web3.exceptions import ContractCustomError, Web3RPCError
 
 from cli import utils
 from cli._cli import is_dry_run
+from cli.services.web3_service import Web3Service, Address
 
 
-class Address(str):
-    ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+def _tx_to_log_string(transaction, tx_params: dict | None) -> str:
+    # transaction.args is sensitive info, should never be logged
+    # tx_params.data is sensitive info, should never be logged
 
-    def __new__(cls, addr: str) -> "Address":
-        # noinspection PyTypeChecker
-        return super().__new__(cls, str(Web3.to_checksum_address(addr)))
+    result = {
+        "chainId": tx_params["chainId"],
+        "from": tx_params["from"],
+        "to": tx_params["to"],
+        "signature": transaction.signature,
+        "nonce": tx_params["nonce"],
+        "gas": tx_params["gas"],
+        "value": tx_params["value"],
+    } if tx_params else {
+        "to": transaction.address,
+        "signature": transaction.signature,
+    }
 
-    def __eq__(self, other):
-        # noinspection PyBroadException
-        try:
-            other = Address(other)
-        except Exception:
-            # nop
-            pass
-
-        return super().__eq__(other)
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    def __bool__(self):
-        return super() and self != Address.ZERO_ADDRESS
-
-    def __neg__(self):
-        return not self.__bool__()
-
-    def __hash__(self):
-        return super().__hash__()
-
-    def to_filecoin_address(self) -> str:
-        return rpc_utils.eth_address_to_filecoin_address(self)
-
-    def to_actor_id(self) -> int:
-        return rpc_utils.state_lookup_id(self.to_filecoin_address())
-
-    @staticmethod
-    def is_filecoin_address(addr: str) -> bool:
-        return addr.startswith(("f0", "f1", "f2", "f3", "f4", "f5", "t"))
-
-    @staticmethod
-    def from_filecoin_address(addr: str) -> "Address":
-        if not Address.is_filecoin_address(addr):
-            raise ValueError(f"Invalid Filecoin address format: {addr}")
-
-        return Address(rpc_utils.from_filecoin_address_to_eth_address(addr))
-
-    @staticmethod
-    def from_private_key(private_key: PrivateKeyType) -> "Address":
-        try:
-            return Address(Web3Service().get_address_from_private_key(private_key))
-        except Exception as e:
-            raise ValueError(f"Invalid private key: {str(e)}") from e
+    return utils.json_pretty(result)
 
 
-class ContractService(Web3Service):
-    ZERO_TX_HASH = "0x" + "00" * 32
-
+class ContractService:
     def __new__(cls, *args, **kwargs):
         return object.__new__(cls)
 
     def __init__(self, contract_address: Address, contract_abi_path: str):
         super().__init__()
         self.logger = logging.getLogger(self._get_class_name())
+        self.web3 = Web3Service()
 
         with open(contract_abi_path, "r", encoding="utf-8") as abi_file:
             contract_abi = json.load(abi_file)
 
-            self.contract = self.get_contract(Address(str(contract_address)), contract_abi)
+            self.contract = self.web3.contract(Address(str(contract_address)), contract_abi)
 
     def _get_class_name(self):
         return self.__class__.__name__
 
-    def filecoin_address(self) -> str:
-        return Address(self.contract.address).to_filecoin_address()
-
-    def actor_id(self) -> int:
-        return Address(self.contract.address).to_actor_id()
+    def address(self) -> Address:
+        return Address(self.contract.address)
 
     def __decode_contract_error_name(self, err: ContractCustomError) -> str:
         def find_error_in_abi(selector: bytes) -> ABIElement | None:
             for item in [i for i in self.contract.abi if i.get("type") == "error"]:
                 sig = item["name"] + "(" + ",".join(i["type"] for i in item["inputs"]) + ")"
 
-                if self.keccak(text=sig)[:4] == selector:
+                if self.web3.keccak(text=sig)[:4] == selector:
                     return item
 
             return None
@@ -140,47 +98,51 @@ class ContractService(Web3Service):
         # noinspection PyBroadException
         try:
             return f"{abi_error['name']}({format_error_args(abi_error, arg_data)})"
+
+        # pylint: disable=broad-exception-caught
         except Exception:
             return f"DecodingError name={abi_error['name']} hex={hex_data} err={str(err)}"
 
     def __send_tx(self, signed_tx: SignedTransaction, dry_run: bool) -> HexBytes:
-        assert not dry_run
-        return self.send_raw_transaction(signed_tx)
+        if dry_run:  # should not happen
+            raise RuntimeError("Attempted to send transaction in dry-run mode")
+
+        return self.web3.send_raw_transaction(signed_tx)
 
     def _sign_and_send_tx(self, transaction, tx_params: dict, from_private_key: PrivateKeyType, dry_run: bool = False) -> str:
         # transaction.args is sensitive info, should never be logged
         # tx_params.data is sensitive info, should never be logged
 
-        signed_tx = self.sign_transaction(tx_params, from_private_key)
+        signed_tx = self.web3.sign_transaction(tx_params, from_private_key)
 
         if dry_run:
-            return ContractService.ZERO_TX_HASH
+            return Web3Service.ZERO_TX_HASH
 
         # NOT DRY RUN, SENDING TRANSACTION
 
         tx_hash = self.__send_tx(signed_tx, dry_run)
-        self.logger.warning(f"Transaction sent: {tx_hash.to_0x_hex()}: {ContractService.tx_to_log_string(transaction, tx_params)}")
+        self.logger.warning(f"Transaction sent: {tx_hash.to_0x_hex()}: {_tx_to_log_string(transaction, tx_params)}")
 
         click.echo(f"Waiting for transaction {tx_hash.to_0x_hex()}...")
-        receipt = self.wait_for_transaction_receipt(tx_hash, timeout=60 * 15, poll_latency=5)  # 15 minutes timeout, 5 seconds polling interval
+        receipt = self.web3.wait_for_transaction_receipt(tx_hash, timeout=60 * 15, poll_latency=5)  # 15 minutes timeout, 5 seconds polling interval
 
         if receipt["status"] == 0:
             # tx failed
-            tx = self.get_transaction(tx_hash)
+            tx = self.web3.get_transaction(tx_hash)
 
             # this call should revert with the same error as the transaction
-            reason = self.call({"to": tx["to"], "from": tx["from"], "data": tx["input"]}, receipt["blockNumber"])
-            raise click.ClickException(f"Transaction reverted (reason unknown, call returned: {reason.hex() if reason else 'empty'})")
+            reason = self.web3.call({"to": tx["to"], "from": tx["from"], "data": tx["input"]}, receipt["blockNumber"])
+            raise click.ClickException(f"Transaction reverted (reason unknown, call returned: {reason or 'empty'})")
 
         # tx succeeded
-        self.logger.warning(f"Transaction succeeded: {tx_hash.to_0x_hex()}: {ContractService.tx_to_log_string(transaction, tx_params)}")
+        self.logger.warning(f"Transaction succeeded: {tx_hash.to_0x_hex()}: {_tx_to_log_string(transaction, tx_params)}")
         return tx_hash.to_0x_hex()
 
     def sign_and_send_tx(self, transaction, from_private_key: PrivateKeyType) -> str:
         # transaction.args is sensitive info, should never be logged
 
         from_address = Address.from_private_key(from_private_key)
-        nonce = self.get_address_nonce(from_address)
+        nonce = self.web3.get_address_nonce(from_address)
         tx_params = None
 
         try:
@@ -196,7 +158,7 @@ class ContractService(Web3Service):
                                  f"==   to: {tx_params['to']}\n"
                                  f"==   signature: {transaction.signature}\n"
                                  f"==   nonce: {tx_params['nonce']}\n"
-                                 f"==   gas price: {self.get_gas_price()} wei\n"
+                                 f"==   gas price: {self.web3.get_gas_price()} wei\n"
                                  f"==   gas: {tx_params['gas']}\n"
                                  f"==   value: {tx_params['value']} wei\n"
                                  f"== This is the final confirmation", default=_dry_run):
@@ -207,7 +169,7 @@ class ContractService(Web3Service):
             return self._sign_and_send_tx(transaction, tx_params, from_private_key, _dry_run)
         except ContractCustomError as cce:
             reason = self.__decode_contract_error_name(cce)
-            self.logger.error(f"Transaction reverted with error: {reason}: {ContractService.tx_to_log_string(transaction, tx_params)}")
+            self.logger.error(f"Transaction reverted with error: {reason}: {_tx_to_log_string(transaction, tx_params)}")
             raise click.ClickException(f"Transaction reverted with error: {reason}") from cce
         except Web3RPCError as rpc_err:
             reason = rpc_err.rpc_response["error"]["message"] if (rpc_err.rpc_response and
@@ -215,35 +177,9 @@ class ContractService(Web3Service):
                                                                   "message" in rpc_err.rpc_response["error"] and
                                                                   rpc_err.rpc_response["error"]["message"]) else str(rpc_err)
 
-            self.logger.error(f"Web3 RPC error: {reason}: {ContractService.tx_to_log_string(transaction, tx_params)}")
+            self.logger.error(f"Web3 RPC error: {reason}: {_tx_to_log_string(transaction, tx_params)}")
             raise click.ClickException(f"Web3 RPC error: {reason}") from rpc_err
         except Exception as e:
             reason = str(e)
-            self.logger.error(f"Transaction failed: {reason}: {ContractService.tx_to_log_string(transaction, tx_params)}")
+            self.logger.error(f"Transaction failed: {reason}: {_tx_to_log_string(transaction, tx_params)}")
             raise click.ClickException(f"Transaction failed: {reason}") from e
-
-    @staticmethod
-    def tx_to_log_string(transaction, tx_params: dict | None) -> str:
-        # transaction.args is sensitive info, should never be logged
-        # tx_params.data is sensitive info, should never be logged
-
-        result = {
-            "chainId": tx_params["chainId"],
-            "from": tx_params["from"],
-            "to": tx_params["to"],
-            "signature": transaction.signature,
-            "nonce": tx_params["nonce"],
-            "gas": tx_params["gas"],
-            "value": tx_params["value"],
-        } if tx_params else {
-            "to": transaction.address,
-            "signature": transaction.signature,
-        }
-
-        return utils.json_pretty(result)
-
-    @staticmethod
-    def wait_for_pending_transactions(from_address: Address):
-        _ = Web3Service().get_address_nonce(from_address, block_identifier="pending")
-
-

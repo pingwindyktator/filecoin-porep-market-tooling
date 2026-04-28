@@ -1,29 +1,124 @@
-from hexbytes import HexBytes
-from eth_account.datastructures import SignedTransaction
 import time
+from typing import Dict
+
 import click
+from eth_account.datastructures import SignedTransaction
+from eth_account.types import PrivateKeyType
+from hexbytes import HexBytes
+from web3 import Web3
 from web3.contract import Contract
 from web3.exceptions import Web3RPCError
-from eth_account.types import PrivateKeyType
-from web3 import Web3
+from web3.types import TxParams, BlockIdentifier, TxData, TxReceipt, RPCEndpoint
 
 from cli import utils
 
 
+class Address(str):
+    ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+
+    def __new__(cls, addr: str) -> "Address":
+        # noinspection PyTypeChecker
+        return super().__new__(cls, str(Web3.to_checksum_address(addr)))
+
+    def __eq__(self, other):
+        # noinspection PyBroadException
+        try:
+            other = Address(other)
+
+        # pylint: disable=broad-exception-caught
+        except Exception:
+            # nop
+            pass
+
+        return super().__eq__(other)
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __bool__(self):
+        return super() and self != Address.ZERO_ADDRESS
+
+    def __neg__(self):
+        return not self.__bool__()
+
+    def __hash__(self):
+        return super().__hash__()
+
+    def to_filecoin_address(self) -> str:
+        response = Web3Service().w3().provider.make_request(
+            RPCEndpoint("Filecoin.EthAddressToFilecoinAddress"),
+            [self]
+        )
+
+        if "error" in response:
+            raise RuntimeError(response["error"])
+
+        return response["result"]
+
+    def to_actor_id(self) -> int:
+        f_address = self.to_filecoin_address()
+
+        response = Web3Service().w3().provider.make_request(
+            RPCEndpoint("Filecoin.StateLookupID"),
+            [f_address, None]
+        )
+
+        if "error" in response:
+            raise RuntimeError(response["error"])
+
+        if not response["result"]:
+            raise RuntimeError(f"Failed to get actor ID for address {f_address}: empty result")
+
+        return utils.f0_str_id_to_int(response["result"])
+
+    @staticmethod
+    def is_filecoin_address(addr: str) -> bool:
+        return addr.startswith(("f0", "f1", "f2", "f3", "f4", "f5", "t"))
+
+    @staticmethod
+    def from_filecoin_address(addr: str) -> "Address":
+        if not Address.is_filecoin_address(addr):
+            raise ValueError(f"Invalid Filecoin address format: {addr}")
+
+        response = Web3Service().w3().provider.make_request(
+            RPCEndpoint("Filecoin.FilecoinAddressToEthAddress"),
+            [addr]
+        )
+
+        if "error" in response:
+            raise RuntimeError(response["error"])
+
+        if not response["result"] or not Web3.is_address(response["result"]):
+            raise ValueError(f"Invalid response for FilecoinAddressToEthAddress: {response['result']}")
+
+        return Address(response["result"])
+
+    @staticmethod
+    def from_private_key(private_key: PrivateKeyType) -> "Address":
+        try:
+            return Address(Web3Service().w3().eth.account.from_key(private_key).address)
+        except Exception as e:
+            raise ValueError(f"Invalid private key: {str(e)}") from e
+
+
 class Web3Service:
     _instance: "Web3Service | None" = None
+    ZERO_TX_HASH = "0x" + "00" * 32
 
     def __new__(cls) -> "Web3Service":
         if cls._instance is None:
             cls._instance = super().__new__(cls)
+
+        assert cls._instance
         return cls._instance
 
     def __init__(self):
-        if hasattr(self, '_w3'):
+        if hasattr(self, "_w3"):
             return
+
         self._w3 = Web3(Web3.HTTPProvider(utils.get_env_required("RPC_URL")))
 
-    def get_w3(self) -> Web3:
+    def w3(self) -> Web3:
         return self._w3
 
     def get_chain_id(self) -> int:
@@ -35,46 +130,52 @@ class Web3Service:
     def keccak(self, text: str) -> bytes:
         return self._w3.keccak(text=text)
 
-    def call(self, tx_params: dict, block_identifier: str = "latest") -> str:
-        return self._w3.eth.call(tx_params, block_identifier)
+    def call(self, tx_params: TxParams, block_identifier: BlockIdentifier = "latest") -> str:
+        return self._w3.eth.call(tx_params, block_identifier).to_0x_hex()
 
-    def get_address_from_private_key(self, private_key: PrivateKeyType) -> str:
-        return self._w3.eth.account.from_key(private_key).address
-
-    def get_contract(self, contract_address: str, contract_abi_path: str) -> Contract:
+    def contract(self, contract_address: Address, contract_abi_path: str) -> Contract:
         return self._w3.eth.contract(address=contract_address, abi=contract_abi_path)
 
-    def get_transaction_count(self, from_address: str, block_identifier: str = "pending") -> int:
+    def get_transaction_count(self, from_address: Address, block_identifier: BlockIdentifier = "pending") -> int:
         return self._w3.eth.get_transaction_count(from_address, block_identifier)
 
     def get_gas_price(self) -> int:
         return self._w3.eth.gas_price
 
-    def get_transaction(self, tx_hash: HexBytes) -> dict:
+    def get_transaction(self, tx_hash: HexBytes) -> TxData:
         return self._w3.eth.get_transaction(tx_hash)
 
     def send_raw_transaction(self, signed_tx: SignedTransaction) -> HexBytes:
         return self._w3.eth.send_raw_transaction(signed_tx.raw_transaction)
 
-    def wait_for_transaction_receipt(self, tx_hash: HexBytes, timeout: int = 60 * 15, poll_latency: int = 5) -> dict:
+    def wait_for_transaction_receipt(self, tx_hash: HexBytes, timeout: int = 60 * 15, poll_latency: int = 5) -> TxReceipt:
         return self._w3.eth.wait_for_transaction_receipt(tx_hash, timeout=timeout, poll_latency=poll_latency)
 
     def sign_transaction(self, tx_params: dict, from_private_key: PrivateKeyType) -> SignedTransaction:
         return self._w3.eth.account.sign_transaction(tx_params, from_private_key)
 
-    def get_address_nonce(self, from_address: str, block_identifier: str = "pending") -> int:
+    def state_get_allocations(self, actor_id: int) -> Dict[str, dict]:
+        response = self._w3.provider.make_request(
+            RPCEndpoint("Filecoin.StateGetAllocations"),
+            [utils.int_id_to_f0_str(actor_id), None]
+        )
+
+        if "error" in response:
+            raise RuntimeError(response["error"])
+
+        return response["result"]
+
+    def wait_for_pending_transactions(self, from_address: Address):
+        _ = self.get_address_nonce(from_address, block_identifier="pending")
+
+    def get_address_nonce(self, from_address: Address, block_identifier: str = "pending") -> int:
         try:
             latest_nonce = self.get_transaction_count(from_address, "latest")
             if block_identifier == "latest":
                 return latest_nonce
 
             assert block_identifier == "pending", f"Unsupported block identifier: {block_identifier}"
-            try:
-                pending_nonce = self.get_transaction_count(from_address, "pending")
-            except Web3RPCError as e:
-                if "actor not found" in str(e):
-                    return 0
-                raise
+            pending_nonce = self.get_transaction_count(from_address, "pending")
 
             while pending_nonce > latest_nonce:
                 while pending_nonce > latest_nonce:
@@ -89,7 +190,16 @@ class Web3Service:
 
             return pending_nonce
 
+        except Web3RPCError as rpc_err:
+            if "actor not found" in str(rpc_err).lower():
+                return 0
+
+            reason = rpc_err.rpc_response["error"]["message"] if (rpc_err.rpc_response and
+                                                                  "error" in rpc_err.rpc_response and
+                                                                  "message" in rpc_err.rpc_response["error"] and
+                                                                  rpc_err.rpc_response["error"]["message"]) else str(rpc_err)
+
+            raise RuntimeError(f"Web3 RPC error while getting nonce for address {from_address}: {reason}") from rpc_err
+
         except Exception as e:
-            raise Exception(f"Failed to get nonce for address {from_address}: {str(e)}") from e
-            
-        
+            raise RuntimeError(f"Failed to get nonce for address {from_address}: {str(e)}") from e

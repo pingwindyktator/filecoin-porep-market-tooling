@@ -3,7 +3,7 @@ from datetime import datetime
 import psycopg
 
 from cli import utils
-from cli.services.contracts.contract_service import Address
+from cli.services.web3_service import Address
 
 
 @utils.json_dataclass()

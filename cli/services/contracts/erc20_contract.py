@@ -1,6 +1,7 @@
 import os
 
-from cli.services.contracts.contract_service import ContractService, Address
+from cli.services.contracts.contract_service import ContractService
+from cli.services.web3_service import Address
 
 
 class ERC20Contract(ContractService):

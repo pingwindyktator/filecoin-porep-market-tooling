@@ -3,7 +3,7 @@ from eth_account.types import PrivateKeyType
 
 from cli import utils
 from cli.commands import utils as commands_utils
-from cli.services.contracts.contract_service import Address, ContractService
+from cli.services.web3_service import Address, Web3Service
 
 ADMIN_PRIVATE_KEY: str | None = None
 
@@ -63,4 +63,4 @@ def wait():
     Wait for all pending transactions from the current private key to be mined and exit. Useful when executing a series of commands.
     """
 
-    ContractService.wait_for_pending_transactions(admin_address())
+    Web3Service().wait_for_pending_transactions(admin_address())

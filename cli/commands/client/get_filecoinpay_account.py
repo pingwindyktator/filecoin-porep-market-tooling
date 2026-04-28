@@ -2,9 +2,9 @@ import click
 
 from cli import utils
 from cli.commands.client._client import client_address
-from cli.services.contracts.contract_service import Address
 from cli.services.contracts.erc20_contract import ERC20Contract
 from cli.services.contracts.filecoin_pay import FileCoinPay
+from cli.services.web3_service import Address
 
 
 @click.command()

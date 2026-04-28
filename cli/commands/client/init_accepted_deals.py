@@ -5,12 +5,12 @@ import click
 from cli import utils
 from cli.commands.client import _utils as client_utils
 from cli.commands.client._client import client_address, client_private_key
-from cli.services.contracts.contract_service import ContractService, Address
 from cli.services.contracts.filecoin_pay import FileCoinPay
 from cli.services.contracts.filecoinpay_validator import FileCoinPayValidator
 from cli.services.contracts.porep_market import PoRepMarketDealState, PoRepMarketDealProposal, PoRepMarket
 from cli.services.contracts.usdc_token import USDCToken
 from cli.services.contracts.validator_factory import ValidatorFactory
+from cli.services.web3_service import Address, Web3Service
 
 
 @click.command()
@@ -27,7 +27,7 @@ def init_accepted_deals(deal_id: int | None = None):
     3. initialize FileCoinPay rail.
     """
 
-    ContractService.wait_for_pending_transactions(client_address())
+    Web3Service().wait_for_pending_transactions(client_address())
 
     if deal_id is not None:
         accepted_deals = [PoRepMarket().get_deal_proposal(deal_id)]
@@ -41,13 +41,13 @@ def init_accepted_deals(deal_id: int | None = None):
 
         try:
             _deploy_and_set_validator(deal.deal_id)
-            ContractService.wait_for_pending_transactions(client_address())
+            Web3Service().wait_for_pending_transactions(client_address())
 
             _deposit_and_approve_operator(deal.deal_id)
-            ContractService.wait_for_pending_transactions(client_address())
+            Web3Service().wait_for_pending_transactions(client_address())
 
             _initialize_rail(deal.deal_id)
-            ContractService.wait_for_pending_transactions(client_address())
+            Web3Service().wait_for_pending_transactions(client_address())
         except click.ClickException as e:
             e.show()
             continue

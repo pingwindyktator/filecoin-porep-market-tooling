@@ -32,6 +32,7 @@ def onboard_data(deal_id: int, output_dir: str, jobs: int):
     # noinspection PyBroadException
     try:
         subprocess.run([aria2c_path, "--version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+
     # pylint: disable=broad-exception-caught
     except Exception as e:
         raise click.ClickException("aria2c not found. Please install aria2c to use this command. "

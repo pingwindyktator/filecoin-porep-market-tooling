@@ -3,7 +3,8 @@ import os
 from eth_account.types import PrivateKeyType
 
 from cli import utils
-from cli.services.contracts.contract_service import ContractService, Address
+from cli.services.contracts.contract_service import ContractService
+from cli.services.web3_service import Address
 
 
 @utils.json_dataclass()

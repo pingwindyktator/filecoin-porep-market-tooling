@@ -5,10 +5,9 @@ import multibase
 from cli import utils
 from cli.commands import utils as commands_utils
 from cli.commands.client._client import client_address, client_private_key
-from cli.services import rpc_utils
 from cli.services.contracts.client_contract import ClientContract, TransferParams
-from cli.services.contracts.contract_service import ContractService
 from cli.services.contracts.porep_market import PoRepMarket, PoRepMarketDealState
+from cli.services.web3_service import Web3Service
 
 EPOCHS_PER_DAY = 60 * 24 * 2
 EPOCHS_PER_MONTH = EPOCHS_PER_DAY * 30
@@ -35,7 +34,7 @@ def make_allocations(deal_id: int, print_only: bool = False, exclude_dag: bool =
     4. IMPORTANT: mark deal as completed in the last batch to allow SP to submit the proof and receive payment.
     """
 
-    ContractService.wait_for_pending_transactions(client_address())
+    Web3Service().wait_for_pending_transactions(client_address())
     deal = PoRepMarket().get_deal_proposal(deal_id)
 
     if deal.state != PoRepMarketDealState.ACCEPTED:
@@ -49,7 +48,7 @@ def make_allocations(deal_id: int, print_only: bool = False, exclude_dag: bool =
         pieces = [piece for piece in pieces if piece["pieceType"] != "dag"]
 
     deal_allocations = client_contract.get_client_allocation_ids_per_deal(deal_id)
-    state_allocations = rpc_utils.state_get_allocations(client_contract.actor_id())
+    state_allocations = Web3Service().state_get_allocations(client_contract.address().to_actor_id())
 
     pieces_allocated = commands_utils.match_deal_allocations(pieces, state_allocations, deal_allocations)
     click.echo(f"\nFound {len(pieces_allocated)} already allocated pieces" + (f": {utils.json_pretty(pieces_allocated)}" if pieces_allocated else ""))
@@ -84,7 +83,7 @@ def make_allocations(deal_id: int, print_only: bool = False, exclude_dag: bool =
             batch=batch,
             term_min=deal_duration,
             term_max=deal_duration,
-            expiration=ContractService.get_block_number() + EPOCHS_PER_MONTH
+            expiration=Web3Service().get_block_number() + EPOCHS_PER_MONTH
         )
 
         total_size = sum(size for _, size in batch)
@@ -104,7 +103,7 @@ def make_allocations(deal_id: int, print_only: bool = False, exclude_dag: bool =
             tx_hash = client_contract.transfer(params, deal_id, is_completed, client_private_key())
             click.echo(f"params: {params}, tx={tx_hash}, deal_completed={is_completed}")
 
-            if tx_hash == ContractService.ZERO_TX_HASH:
+            if tx_hash == Web3Service.ZERO_TX_HASH:
                 click.echo("Cannot continue with dry-run mode, exiting.")
                 return
 

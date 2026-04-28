@@ -1,11 +1,10 @@
 import click
 
 from cli import utils
-from cli.services import rpc_utils
 from cli.commands import utils as commands_utils
-from cli.services import rpc_utils
 from cli.services.contracts.client_contract import ClientContract
 from cli.services.contracts.porep_market import PoRepMarket
+from cli.services.web3_service import Web3Service
 
 
 @click.command()
@@ -22,7 +21,7 @@ def get_allocations(deal_id: int):
     pieces = manifest[0]["pieces"]
 
     deal_allocations = ClientContract().get_client_allocation_ids_per_deal(deal_id)
-    state_allocations = rpc_utils.state_get_allocations(ClientContract().actor_id())
+    state_allocations = Web3Service().state_get_allocations(ClientContract().address().to_actor_id())
     deal_allocations = commands_utils.match_deal_allocations(pieces, state_allocations, deal_allocations)
 
     click.echo(utils.json_pretty(deal_allocations))

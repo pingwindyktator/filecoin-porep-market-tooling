@@ -3,8 +3,8 @@ import click
 from cli import utils
 from cli.commands.admin import _utils as admin_utils
 from cli.commands.admin._admin import admin_private_key, admin_address
-from cli.services.contracts.contract_service import ContractService
 from cli.services.contracts.sp_registry import SPRegistry, SPRegistryProvider, SPRegistryProviderInfo
+from cli.services.web3_service import Web3Service
 
 
 def __update_provider_params(provider: SPRegistryProvider | SPRegistryProviderInfo,
@@ -95,7 +95,7 @@ def __update_provider_params(provider: SPRegistryProvider | SPRegistryProviderIn
 
 # TODO LATER print register provider at the end?
 def _register_sps(providers: list[SPRegistryProvider]):
-    ContractService.wait_for_pending_transactions(admin_address())
+    Web3Service().wait_for_pending_transactions(admin_address())
 
     for provider in providers:
         is_registered = SPRegistry().is_provider_registered(provider.provider_id)

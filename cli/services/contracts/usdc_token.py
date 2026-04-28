@@ -1,8 +1,8 @@
 import os
 
 from cli import utils
-from cli.services.contracts.contract_service import Address
 from cli.services.contracts.erc20_contract import ERC20Contract
+from cli.services.web3_service import Address
 
 
 class USDCToken(ERC20Contract):

@@ -2,8 +2,8 @@ import click
 
 from cli.commands.sp import _utils as sp_utils
 from cli.commands.sp._sp import sp_address
-from cli.services.contracts.contract_service import ContractService
 from cli.services.contracts.porep_market import PoRepMarket
+from cli.services.web3_service import Web3Service
 
 
 @click.command()
@@ -16,6 +16,6 @@ def accept_deal(deal_id: int):
     DEAL_ID - The id of the deal proposal to accept.
     """
 
-    ContractService.wait_for_pending_transactions(sp_address())
+    Web3Service().wait_for_pending_transactions(sp_address())
 
     sp_utils.accept_deal(PoRepMarket().get_deal_proposal(deal_id))

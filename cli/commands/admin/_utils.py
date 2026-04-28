@@ -3,10 +3,10 @@ import humanfriendly
 
 from cli import utils
 from cli.commands import utils as commands_utils
-from cli.services.contracts.contract_service import Address
 from cli.services.contracts.sp_registry import SPRegistryProvider, SPRegistrySLIThresholds
 from cli.services.contracts.usdc_token import USDCToken
 from cli.services.sp_registry_db import SPRegistryDB
+from cli.services.web3_service import Address
 
 
 # TODO LATER extract   # PoRep Market smart contracts assumes month == 30 days   to separate function

@@ -3,10 +3,10 @@ import click
 from cli import utils
 from cli.commands.client import _utils as client_utils
 from cli.commands.client._client import client_address, client_private_key
-from cli.services.contracts.contract_service import ContractService, Address
 from cli.services.contracts.filecoin_pay import FileCoinPay
 from cli.services.contracts.porep_market import PoRepMarketDealState, PoRepMarketDealProposal
 from cli.services.contracts.usdc_token import USDCToken
+from cli.services.web3_service import Address, Web3Service
 
 
 @click.command()
@@ -18,7 +18,7 @@ def deposit_for_all_deals(months: int):
     MONTHS - Number of months to calculate required deposit amount for. [default: 1; x>=1]
     """
 
-    ContractService.wait_for_pending_transactions(client_address())
+    Web3Service().wait_for_pending_transactions(client_address())
 
     accepted_deals = client_utils.get_client_deals(PoRepMarketDealState.ACCEPTED)
     _deposit_for_all_deals(accepted_deals, months)

@@ -172,3 +172,12 @@ class SPRegistry(ContractService):
                 provider_id,
                 payee_address
             ), from_private_key)
+
+    # @notice Check if address is authorized to act on behalf of a provider
+    # @dev Admin and OPERATOR_ROLE always return true. Otherwise checks MinerUtils.isControllingAddress.
+    # @param caller Address to check
+    # @param provider Provider to check against
+    # @return True if caller is authorized for provider
+    def is_authorized_for_provider(self, caller: Address, provider_id: int) -> bool:
+        return self.contract.functions.isAuthorizedForProvider(caller, provider_id).call()
+

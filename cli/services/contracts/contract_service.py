@@ -104,7 +104,7 @@ class ContractService:
             return f"DecodingError name={abi_error['name']} hex={hex_data} err={str(err)}"
 
     def __send_tx(self, signed_tx: SignedTransaction, dry_run: bool) -> HexBytes:
-        if dry_run:  # should not happen
+        if dry_run or dry_run is None:  # should not happen
             raise RuntimeError("Attempted to send transaction in dry-run mode")
 
         return self.web3.send_raw_transaction(signed_tx)

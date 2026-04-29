@@ -36,7 +36,7 @@ def get_all_deals(state: PoRepMarketDealState | str | None = None,
             result.extend(PoRepMarket().get_deals_for_organization_by_state(organization, selected_state))
     else:
         # ... otherwise prefer get_all_deals function
-        result = PoRepMarket().get_all_deals()
+        result = PoRepMarket().get_deals()
 
         if _state:
             result = [deal for deal in result if deal.state == _state]

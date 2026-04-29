@@ -199,5 +199,5 @@ class PoRepMarket(ContractService):
 
     # @notice Gets all deals
     # @return deals Array of all deal proposals
-    def get_all_deals(self) -> list[PoRepMarketDealProposal]:
+    def get_deals(self) -> list[PoRepMarketDealProposal]:
         return [PoRepMarketDealProposal.from_web3(deal) for deal in self.contract.functions.getDeals().call()]

@@ -3,13 +3,13 @@ import humanfriendly
 
 from cli import utils
 from cli.commands import utils as commands_utils
+from cli.services.contracts.porep_market import PoRepMarket
 from cli.services.contracts.sp_registry import SPRegistryProvider, SPRegistrySLIThresholds
 from cli.services.contracts.usdc_token import USDCToken
 from cli.services.sp_registry_db import SPRegistryDB
 from cli.services.web3_service import Address
 
 
-# TODO LATER extract   # PoRep Market smart contracts assumes month == 30 days   to separate function
 def get_db_sps(db_url: str,
                kyc_status: str | None = None,
                organization_id: int | None = None,
@@ -72,8 +72,13 @@ def get_db_sps(db_url: str,
 
         return int(result)
 
+    def months_to_days(months: int) -> int:
+        # PoRep Market smart contracts assumes month == 30 days
+        return months * 30
+
     #
 
+    max_deal_duration_days_limit = PoRepMarket().get_max_deal_duration_days()
     result: list[SPRegistryProvider] = []
     organizations = SPRegistryDB(db_url).get_organizations(kyc_status=kyc_status,
                                                            organization_id=organization_id,
@@ -101,33 +106,32 @@ def get_db_sps(db_url: str,
                     default=bool(organization_id)):
                 continue
 
-        # TODO LATER get 1278 from smart contract
-        if org.deal_duration_max_months * 30 > 1278:  # PoRep Market smart contracts assumes month == 30 days
-            max_deal_duration_days = 42 * 30  # 42 months
+        if months_to_days(org.deal_duration_max_months) > max_deal_duration_days_limit:
+            max_deal_duration_days = months_to_days(max_deal_duration_days_limit // 30)
 
             if not click.confirm(
-                    f"Organization {org.organization_address} [db_id {org.id}] has max deal duration of {org.deal_duration_max_months * 30} days "
-                    f"which exceeds the SPRegistry contract limit of {max_deal_duration_days} days. It will be truncated to this value. "
+                    f"Organization {org.organization_address} [db_id {org.id}] has max deal duration of {months_to_days(org.deal_duration_max_months)} days "
+                    f"which exceeds the SPRegistry contract limit of {max_deal_duration_days_limit} days. It will be truncated to {max_deal_duration_days}. "
                     f"Return SPs from this organization?",
                     default=True):
                 continue
         else:
-            max_deal_duration_days = org.deal_duration_max_months * 30  # PoRep Market smart contracts assumes month == 30 days
+            max_deal_duration_days = months_to_days(org.deal_duration_max_months)
 
         # TODO LATER get minimum deral duration from smart contracts
-        if org.deal_duration_min_months * 30 < 180:  # PoRep Market smart contracts assumes month == 30 days
-            min_deal_duration_days = 6 * 30  # 6 months
+        if org.deal_duration_min_months < 6:
+            min_deal_duration_days = months_to_days(6)
 
             if not click.confirm(
-                    f"Organization {org.organization_address} [db_id {org.id}] has min deal duration of {org.deal_duration_min_months * 30} days "
+                    f"Organization {org.organization_address} [db_id {org.id}] has min deal duration of {months_to_days(org.deal_duration_min_months)} days "
                     f"which is below the SPRegistry contract minimum of {min_deal_duration_days} days. It will be increased to this value. "
                     f"Return SPs from this organization?",
                     default=True):
                 continue
         else:
-            min_deal_duration_days = org.deal_duration_min_months * 30  # PoRep Market smart contracts assumes month == 30 days
+            min_deal_duration_days = months_to_days(org.deal_duration_min_months)
 
-        if min_deal_duration_days > max_deal_duration_days:  # PoRep Market smart contracts assumes month == 30 days
+        if min_deal_duration_days > max_deal_duration_days:
             utils.confirm_ok(
                 f"Organization {org.organization_address} [db_id {org.id}] has min deal duration of {min_deal_duration_days} days, "
                 f"which exceeds the max deal duration of {max_deal_duration_days} days. "

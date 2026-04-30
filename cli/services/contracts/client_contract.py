@@ -33,6 +33,16 @@ class ClientContract(ContractService):
         return self.sign_and_send_tx(self.contract.functions.transfer((transfer_params.to, transfer_params.amount, transfer_params.operator_data),
                                                                       deal_id, deal_completed), from_private_key)
 
+    # @notice Replaces all broken tracked allocations for a completed existing deal.
+    # @dev Only callable by RESCUE_ROLE.
+    # @param dealId The id of the deal to rescue.
+    # @param params The DataCap transfer parameters that create replacement allocations.
+    def rescue_deal_allocations(self, deal_id: int, transfer_params: TransferParams, from_private_key: PrivateKeyType) -> str:
+        return self.sign_and_send_tx(
+            self.contract.functions.rescueDealAllocations(
+                deal_id, (transfer_params.to, transfer_params.amount, transfer_params.operator_data)),
+            from_private_key)
+
     # @notice custom getter to retrieve allocation ids per client and provider
     # @param dealId the id of the deal
     # @return allocationIds the allocation ids for the client and provider

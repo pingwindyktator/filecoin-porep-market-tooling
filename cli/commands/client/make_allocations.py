@@ -64,7 +64,8 @@ def make_allocations(deal_id: int, print_only: bool = False, exclude_dag: bool =
 
     click.confirm(f"Continue with allocation of remaining {len(pieces)} pieces in {len(batches)} batches?", default=True, abort=True)
 
-    deal_duration = deal.terms.duration_days * EPOCHS_PER_DAY
+    term_min = deal.terms.duration_days * EPOCHS_PER_DAY
+    term_max = term_min + 14 * EPOCHS_PER_DAY  # + 14 days
 
     for batch_idx, batch in enumerate(batches):
         current_batch_number = batch_idx + 1
@@ -81,8 +82,8 @@ def make_allocations(deal_id: int, print_only: bool = False, exclude_dag: bool =
         operator_data = _build_operator_data_batch(
             provider_id=deal.provider_id,
             batch=batch,
-            term_min=deal_duration,
-            term_max=deal_duration,
+            term_min=term_min,
+            term_max=term_max,
             expiration=Web3Service().get_block_number() + EPOCHS_PER_MONTH
         )
 
